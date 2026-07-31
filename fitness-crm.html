@@ -23834,19 +23834,9 @@ async function boot() {
       };
     }
 
-    // Also animate on any screen change
-    const observer = new MutationObserver(function(mutations) {
-      mutations.forEach(function(m) {
-        if (m.target && m.target.classList) {
-          // Check if a screen became visible
-          if (m.target.classList.contains('active') || !m.target.classList.contains('hidden')) {
-            m.target.classList.remove('dk-page-anim');
-            void m.target.offsetWidth;
-            m.target.classList.add('dk-page-anim');
-          }
-        }
-      });
-    });
+    // Also animate on screen visibility changes (only when hidden is toggled)
+    // Use a lightweight approach: intercept router.show directly instead of MutationObserver
+    // (MutationObserver on body causes infinite reflow loops that block clicks)
 
     // === 3. MODAL ANIMATIONS ===
     function initModalAnimations() {
