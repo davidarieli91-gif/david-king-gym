@@ -2,11 +2,13 @@
 // Caches the app shell for offline use.
 // Strategy: cache-first for app shell, network-first for everything else.
 
-const CACHE_NAME = 'dk-gym-v1';
+const CACHE_NAME = 'dk-gym-v2';
 const APP_SHELL = [
   './',
   './fitness-crm.html',
   './manifest.json',
+  './icon-512.png',
+  './icon-192.png',
 ];
 
 // Install: pre-cache the app shell
