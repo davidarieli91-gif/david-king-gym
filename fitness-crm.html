@@ -23788,6 +23788,7 @@ async function boot() {
     // === 1. RIPPLE EFFECT ===
     function createRipple(e) {
       const btn = e.currentTarget;
+      if (!btn || btn.dataset.noRipple) return;
       const rect = btn.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height);
       const x = (e.clientX || rect.left + rect.width/2) - rect.left - size/2;
@@ -23797,25 +23798,19 @@ async function boot() {
       ripple.style.width = ripple.style.height = size + 'px';
       ripple.style.left = x + 'px';
       ripple.style.top = y + 'px';
+      ripple.style.pointerEvents = 'none';
       btn.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 600);
+      setTimeout(function() { if (ripple.parentNode) ripple.remove(); }, 600);
     }
 
-    // Apply ripple to all buttons
+    // Apply ripple to all buttons (use mousedown, not click, to avoid interference)
     function initRipples() {
       document.querySelectorAll('button:not(.dk-ripple-container):not([data-no-ripple])').forEach(btn => {
         if (btn.dataset.rippleInit) return;
         btn.classList.add('dk-ripple-container');
-        btn.addEventListener('click', createRipple);
+        btn.addEventListener('pointerdown', createRipple);
         btn.dataset.rippleInit = '1';
       });
-    }
-
-    // Re-init ripples periodically (DOM changes)
-    let rippleTimer;
-    function scheduleRipples() {
-      clearTimeout(rippleTimer);
-      rippleTimer = setTimeout(initRipples, 500);
     }
 
     // === 2. PAGE TRANSITIONS ===
@@ -23994,12 +23989,16 @@ async function boot() {
       initAll();
     }
 
-    // Re-init periodically (DOM changes from SPA navigation)
-    setInterval(() => {
-      try { initRipples(); } catch(e) {}
-      try { initCardLift(); } catch(e) {}
-      try { initButtonPress(); } catch(e) {}
-    }, 2000);
+    // Re-init after navigation (debounced, not interval)
+    let reinitTimer;
+    document.addEventListener('click', function() {
+      clearTimeout(reinitTimer);
+      reinitTimer = setTimeout(function() {
+        try { initRipples(); } catch(e) {}
+        try { initCardLift(); } catch(e) {}
+        try { initButtonPress(); } catch(e) {}
+      }, 500);
+    }, true);
 
     // Expose globally
     window.dkUI = {
@@ -24304,7 +24303,8 @@ async function boot() {
             '</div>';
 
           const nextBtn = document.getElementById('dk-ob-next');
-          if (nextBtn) nextBtn.onclick = function() {
+          if (nextBtn) nextBtn.onclick = function(e) {
+            e.stopPropagation();
             window.dkHaptic(10);
             if (isLast) {
               try { localStorage.setItem('dk_onboarding_done', '1'); } catch(e) {}
@@ -24315,19 +24315,28 @@ async function boot() {
             }
           };
           const prevBtn = document.getElementById('dk-ob-prev');
-          if (prevBtn) prevBtn.onclick = function() {
+          if (prevBtn) prevBtn.onclick = function(e) {
+            e.stopPropagation();
             current--;
             render();
           };
         }
 
+        // Close on overlay click (outside card)
+        overlay.onclick = function(e) {
+          if (e.target === overlay) {
+            try { localStorage.setItem('dk_onboarding_done', '1'); } catch(e) {}
+            overlay.remove();
+          }
+        };
+
         document.body.appendChild(overlay);
         render();
       }
 
-      // Show onboarding on first visit
+      // Show onboarding on first visit (delayed, after app loads)
       if (shouldShowOnboarding()) {
-        setTimeout(showOnboarding, 1500);
+        setTimeout(showOnboarding, 2500);
       }
 
       // Allow re-triggering from settings
