@@ -559,6 +559,165 @@
       .no-print { display: none !important; }
     }
 
+    /* ====================================================================
+       MODERN UI ANIMATIONS & EFFECTS
+       ==================================================================== */
+
+    /* --- 1. Page transitions (fade-in + slide-up) --- */
+    @keyframes dk-page-enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dk-page-anim {
+      animation: dk-page-enter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    /* --- 2. Card hover lift --- */
+    .dk-lift {
+      transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+                  box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .dk-lift:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+    .dk-lift:active {
+      transform: translateY(-1px) scale(0.99);
+    }
+
+    /* --- 3. Modal scale + fade animations --- */
+    @keyframes dk-modal-enter {
+      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes dk-modal-exit {
+      from { opacity: 1; transform: scale(1) translateY(0); }
+      to   { opacity: 0; transform: scale(0.92) translateY(10px); }
+    }
+    .dk-modal-anim {
+      animation: dk-modal-enter 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+    .dk-modal-exit-anim {
+      animation: dk-modal-exit 0.2s ease-in forwards;
+    }
+    @keyframes dk-overlay-enter {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .dk-overlay-anim {
+      animation: dk-overlay-enter 0.2s ease;
+    }
+
+    /* --- 4. Ripple effect --- */
+    .dk-ripple-container {
+      position: relative;
+      overflow: hidden;
+    }
+    .dk-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: dk-ripple-spread 0.6s ease-out;
+      pointer-events: none;
+    }
+    @keyframes dk-ripple-spread {
+      to { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* --- 5. Stagger list animations --- */
+    @keyframes dk-stagger-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dk-stagger-item {
+      animation: dk-stagger-in 0.3s ease-out backwards;
+    }
+
+    /* --- 6. Gradient text --- */
+    .dk-gradient-text {
+      background: linear-gradient(135deg, rgb(var(--c-primary)), rgb(var(--c-accent)));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* --- 7. Skeleton shimmer --- */
+    @keyframes dk-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .dk-skeleton {
+      background: linear-gradient(
+        90deg,
+        rgb(var(--c-surface-2)) 25%,
+        rgb(var(--c-border)) 50%,
+        rgb(var(--c-surface-2)) 75%
+      );
+      background-size: 200% 100%;
+      animation: dk-shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+
+    /* --- 8. Animated counter --- */
+    .dk-counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* --- 9. Toast redesign --- */
+    @keyframes dk-toast-in {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes dk-toast-out {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(100%); }
+    }
+    #toast-container > div {
+      animation: dk-toast-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    /* --- 10. Offline indicator --- */
+    .dk-offline-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, #ef4444, #f59e0b);
+      color: white;
+      text-align: center;
+      padding: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 9999;
+      transform: translateY(-100%);
+      transition: transform 0.3s ease;
+    }
+    .dk-offline-banner.visible {
+      transform: translateY(0);
+    }
+
+    /* --- 11. Button press effect --- */
+    .dk-press {
+      transition: transform 0.1s ease;
+    }
+    .dk-press:active {
+      transform: scale(0.96);
+    }
+
+    /* --- 12. Screen spinner (for exercise-db loading) --- */
+    @keyframes dk-spin {
+      to { transform: rotate(360deg); }
+    }
+    .dk-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgb(var(--c-border));
+      border-top-color: rgb(var(--c-primary));
+      border-radius: 50%;
+      animation: dk-spin 0.8s linear infinite;
+    }
+
     /* YouTube mini-player in exercise card */
     .yt-player {
       position: relative;
@@ -23612,6 +23771,267 @@ async function boot() {
         } catch(e) {
           console.error('[backup] load failed:', e);
           return { ok: false, error: e.message };
+        }
+      }
+    };
+  })();
+  </script>
+
+  <!-- ============================================================
+       MODERN UI: Ripple, Page Transitions, Modal Anim,
+       Auto-backup, Offline indicator, Stagger, Counter
+       ============================================================ -->
+  <script>
+  (function() {
+    'use strict';
+
+    // === 1. RIPPLE EFFECT ===
+    function createRipple(e) {
+      const btn = e.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = (e.clientX || rect.left + rect.width/2) - rect.left - size/2;
+      const y = (e.clientY || rect.top + rect.height/2) - rect.top - size/2;
+      const ripple = document.createElement('span');
+      ripple.className = 'dk-ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      btn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+    }
+
+    // Apply ripple to all buttons
+    function initRipples() {
+      document.querySelectorAll('button:not(.dk-ripple-container):not([data-no-ripple])').forEach(btn => {
+        if (btn.dataset.rippleInit) return;
+        btn.classList.add('dk-ripple-container');
+        btn.addEventListener('click', createRipple);
+        btn.dataset.rippleInit = '1';
+      });
+    }
+
+    // Re-init ripples periodically (DOM changes)
+    let rippleTimer;
+    function scheduleRipples() {
+      clearTimeout(rippleTimer);
+      rippleTimer = setTimeout(initRipples, 500);
+    }
+
+    // === 2. PAGE TRANSITIONS ===
+    const originalShow = window.router ? window.router.show : null;
+    if (originalShow) {
+      const origShow = originalShow;
+      window.router.show = function(screen) {
+        const target = document.querySelector('[data-screen="' + screen + '"]') ||
+                       document.getElementById('screen-' + screen);
+        if (target) {
+          target.classList.remove('dk-page-anim');
+          void target.offsetWidth; // force reflow
+          target.classList.add('dk-page-anim');
+        }
+        return origShow.apply(this, arguments);
+      };
+    }
+
+    // Also animate on any screen change
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.target && m.target.classList) {
+          // Check if a screen became visible
+          if (m.target.classList.contains('active') || !m.target.classList.contains('hidden')) {
+            m.target.classList.remove('dk-page-anim');
+            void m.target.offsetWidth;
+            m.target.classList.add('dk-page-anim');
+          }
+        }
+      });
+    });
+
+    // === 3. MODAL ANIMATIONS ===
+    function initModalAnimations() {
+      // Watch for modals becoming visible
+      document.querySelectorAll('.hidden.fixed.inset-0').forEach(modal => {
+        if (modal.dataset.modalAnimInit) return;
+        modal.dataset.modalAnimInit = '1';
+
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(m) {
+            if (m.attributeName === 'class') {
+              const isHidden = modal.classList.contains('hidden');
+              if (!isHidden) {
+                // Modal opened — add animation
+                const content = modal.querySelector(':scope > div');
+                if (content) {
+                  content.classList.remove('dk-modal-anim');
+                  void content.offsetWidth;
+                  content.classList.add('dk-modal-anim');
+                }
+                modal.classList.remove('dk-overlay-anim');
+                void modal.offsetWidth;
+                modal.classList.add('dk-overlay-anim');
+              }
+            }
+          });
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
+
+    // === 4. CARD HOVER LIFT ===
+    function initCardLift() {
+      // Apply to client cards, exercise cards, program cards
+      var cardSelector = '.bg-surface.border.border-border.rounded-2xl.shadow-card, .bg-surface-2.border.border-border.rounded-xl, .bm-ex-card';
+      document.querySelectorAll(cardSelector).forEach(card => {
+        if (card.dataset.liftInit) return;
+        card.classList.add('dk-lift');
+        card.dataset.liftInit = '1';
+      });
+    }
+
+    // === 5. AUTO-BACKUP ===
+    let autoBackupTimer;
+    function startAutoBackup() {
+      // Every 5 minutes, save critical data to localStorage
+      autoBackupTimer = setInterval(async () => {
+        try {
+          if (typeof db === 'undefined') return;
+          const clients = await db.all('clients');
+          const programs = await db.all('client_programs');
+          const settings = await db.all('settings');
+          const backup = {
+            _ts: Date.now(),
+            _version: 1,
+            clients: clients,
+            client_programs: programs,
+            settings: settings
+          };
+          // Try to save (may fail if too large)
+          try {
+            localStorage.setItem('dk_auto_backup', JSON.stringify(backup));
+          } catch(e) {
+            // localStorage full — save just client names + IDs
+            const minimal = clients.map(c => ({ id: c.id, name: c.full_name }));
+            localStorage.setItem('dk_auto_backup_minimal', JSON.stringify({ _ts: Date.now(), clients: minimal }));
+          }
+        } catch(e) {
+          // Silent fail
+        }
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+
+    // === 6. OFFLINE INDICATOR ===
+    function initOfflineIndicator() {
+      const banner = document.createElement('div');
+      banner.className = 'dk-offline-banner';
+      banner.innerHTML = '📡 Нет подключения к интернету — работает офлайн';
+      document.body.appendChild(banner);
+
+      function updateOnlineStatus() {
+        if (navigator.onLine) {
+          banner.classList.remove('visible');
+        } else {
+          banner.classList.add('visible');
+        }
+      }
+
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+    }
+
+    // === 7. STAGGER ANIMATIONS ===
+    function applyStagger(selector, delayMs) {
+      delayMs = delayMs || 40;
+      document.querySelectorAll(selector).forEach((el, i) => {
+        el.classList.remove('dk-stagger-item');
+        void el.offsetWidth;
+        el.style.animationDelay = (i * delayMs) + 'ms';
+        el.classList.add('dk-stagger-item');
+      });
+    }
+
+    // === 8. ANIMATED COUNTER ===
+    window.dkAnimateCount = function(element, target, duration) {
+      duration = duration || 800;
+      const start = 0;
+      const startTime = performance.now();
+      element.classList.add('dk-counter');
+      function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        element.textContent = Math.round(start + (target - start) * eased);
+        if (progress < 1) requestAnimationFrame(update);
+        else element.textContent = target;
+      }
+      requestAnimationFrame(update);
+    };
+
+    // === 9. LOADING SPINNER for exercise-db ===
+    window.dkShowSpinner = function(container, message) {
+      if (!container) return;
+      message = message || 'Загрузка...';
+      container.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;">' +
+        '<div class="dk-spinner"></div>' +
+        '<div style="font-size:14px;color:rgb(var(--c-muted));">' + message + '</div>' +
+        '</div>';
+    };
+
+    // === 10. BUTTON PRESS EFFECT ===
+    function initButtonPress() {
+      document.querySelectorAll('button:not([data-no-press])').forEach(btn => {
+        if (btn.dataset.pressInit) return;
+        btn.classList.add('dk-press');
+        btn.dataset.pressInit = '1';
+      });
+    }
+
+    // === INIT ALL ===
+    function initAll() {
+      try { initRipples(); } catch(e) {}
+      try { initModalAnimations(); } catch(e) {}
+      try { initCardLift(); } catch(e) {}
+      try { initButtonPress(); } catch(e) {}
+      try { initOfflineIndicator(); } catch(e) {}
+      try { startAutoBackup(); } catch(e) {}
+    }
+
+    // Init on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAll);
+    } else {
+      initAll();
+    }
+
+    // Re-init periodically (DOM changes from SPA navigation)
+    setInterval(() => {
+      try { initRipples(); } catch(e) {}
+      try { initCardLift(); } catch(e) {}
+      try { initButtonPress(); } catch(e) {}
+    }, 2000);
+
+    // Expose globally
+    window.dkUI = {
+      ripple: initRipples,
+      stagger: applyStagger,
+      showModal: function(modalId) {
+        const m = document.getElementById(modalId);
+        if (m) m.classList.remove('hidden');
+      },
+      hideModal: function(modalId) {
+        const m = document.getElementById(modalId);
+        if (m) {
+          const content = m.querySelector(':scope > div');
+          if (content) {
+            content.classList.add('dk-modal-exit-anim');
+            setTimeout(() => {
+              m.classList.add('hidden');
+              content.classList.remove('dk-modal-exit-anim');
+            }, 200);
+          } else {
+            m.classList.add('hidden');
+          }
         }
       }
     };
