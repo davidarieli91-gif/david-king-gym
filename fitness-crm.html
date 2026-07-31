@@ -545,6 +545,9 @@
     .bm-muscle-label { font-size: 7px; fill: rgb(var(--c-muted)); pointer-events: none; text-anchor: middle; font-weight: 600; }
     .bm-ex-card { transition: all .12s; }
     .bm-ex-card:active { transform: scale(.95); }
+    .bm-ex-card img, .bm-ex-card .ex-anim-container img { object-fit: contain !important; }
+    #exercise-gif-slot { aspect-ratio: 1 / 1 !important; max-height: 60vh; }
+    @media (max-width: 640px) { #exercise-gif-slot { max-height: 50vh; } }
     .bm-chip { transition: all .12s; }
     .bm-chip.active { background: rgb(var(--c-primary)); color: #fff; border-color: rgb(var(--c-primary)); }
 
@@ -1589,6 +1592,7 @@
                   <button data-exercise-source="all" class="ex-src-btn px-3 py-1.5 rounded-md text-xs font-semibold transition bg-primary text-white" data-i18n="common.all">All</button>
                   <button data-exercise-source="muscle_motion" class="ex-src-btn px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="exercise.sourceMuscleMotion">Muscle Motion</button>
                   <button data-exercise-source="private_gym" class="ex-src-btn px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="exercise.sourcePrivateGym">Private Gym</button>
+                  <button data-exercise-source="burnfit" class="ex-src-btn px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="exercise.sourceBurnfit">Burnfit</button>
                 </div>
                 <span id="exercise-count" class="text-xs text-muted bg-surface-2 border border-border rounded-full px-2 py-0.5">0</span>
                 <button id="exercise-edit-mode-btn" class="bg-surface-2 hover:bg-border/40 border border-border text-sm font-medium px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5">
@@ -1609,6 +1613,19 @@
                 <div class="relative flex-1">
                   <svg class="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
                   <input type="search" id="exercise-search" data-i18n-ph="exercise.searchPlaceholder" class="w-full bg-surface-2 border border-border rounded-xl ps-9 pe-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
+                </div>
+                <button id="exercise-bodymap-toggle" class="bg-surface-2 hover:bg-border/40 border border-border text-sm font-medium px-3 py-2 rounded-xl transition inline-flex items-center gap-1.5" title="Body map">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><path d="M12 7v5M8 11l4 1 4-1M9 22l3-9 3 9"/></svg>
+                  <span class="hidden sm:inline" data-i18n="exercise.bodyMap">Body map</span>
+                </button>
+              </div>
+              <div id="exercise-bodymap-panel" class="hidden mb-3 bg-surface-2 border border-border rounded-xl p-3 flex flex-col sm:flex-row gap-3 items-start">
+                <div id="exercise-bodymap-svg" class="shrink-0 mx-auto sm:mx-0" style="max-width: 140px;"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span id="exercise-bodymap-active" class="text-xs font-semibold text-muted">—</span>
+                    <button id="exercise-bodymap-clear" class="text-[10px] text-primary-2 hover:text-primary underline">Clear filter</button>
+                  </div>
                 </div>
               </div>
               <!-- Tree container (3-level: Group → Subgroup → Equipment → Exercises) -->
@@ -1984,8 +2001,10 @@
               <div class="p-3 border-b border-border flex items-center gap-2 shrink-0">
                 <h3 class="font-display font-bold text-base flex-1" data-i18n="programs.quickPick">Quick Pick</h3>
                 <div class="flex gap-1 bg-surface-2 border border-border rounded-lg p-0.5">
+                  <button id="bm-tab-all" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="common.all">All</button>
                   <button id="bm-tab-pg" class="px-3 py-1.5 rounded-md text-xs font-semibold transition bg-primary text-white" data-i18n="exercise.sourcePrivateGym">Private Gym</button>
                   <button id="bm-tab-mm" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="exercise.sourceMuscleMotion">Muscle Motion</button>
+                  <button id="bm-tab-bf" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="exercise.sourceBurnfit">Burnfit</button>
                   <button id="bm-tab-favorites" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted">⭐</button>
                   <button id="bm-tab-recent" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted">🕐</button>
                 </div>
@@ -2009,9 +2028,10 @@
                   <div class="flex flex-1 overflow-hidden">
                     <!-- Left: SVG body + muscle selector (expandable folders with subgroups) -->
                     <div class="shrink-0 p-2 border-e border-border flex flex-col overflow-y-auto" style="width: 160px">
-                      <div class="flex justify-center gap-1 mb-1">
+                      <div class="flex justify-center gap-1 mb-1 flex-wrap">
                         <button id="bm-view-front" class="px-2 py-1 rounded text-[10px] font-semibold transition bg-primary text-white" data-bm-view="front">Front</button>
                         <button id="bm-view-back" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted" data-bm-view="back">Back</button>
+                        <button id="bm-view-side" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted" data-bm-view="side">Side</button>
                       </div>
                       <div id="bm-svg-container" class="flex justify-center mb-2"></div>
                       <!-- Expandable muscle group folders (rendered by JS) -->
@@ -3879,109 +3899,132 @@
 
 
 
-      /** For MM exercises, assign an anatomical subgroup based on exercise name.
-       *  MM's original data had only "General" or "Biceps" for most groups.
-       *  We split them into proper subgroups matching the Private Gym structure:
-       *    elbow_flexors → biceps / brachialis / brachioradialis
-       *    chest → upper / middle / lower
-       *    shoulders → front / middle / rear
-       *    abdominals → upper / obliques / lower
-       *    triceps → seated / lying / compound
-       *    back → lats / middle_back / lower_back / trapezius / neck (kept from MM)
-       *    legs → quadriceps / hamstrings / calves / glutes / adductors / abductors (kept)
-       *    forearms → (single group, no split needed)
-       *  For PG exercises, keep the existing subgroup UNLESS it's "General"
-       *  (in which case we drop it — exercises go directly under the group). */
+      /** Canonical subgroup names — same across all 3 sources. */
+      const SUBGROUP_NORMALIZE = {
+        'quads': 'Quadriceps', 'quadriceps': 'Quadriceps',
+        'hamstring': 'Hamstrings', 'hamstrings': 'Hamstrings',
+        'glute': 'Glutes', 'glutes': 'Glutes',
+        'calf': 'Calves', 'calves': 'Calves',
+        'adduct': 'Adductors', 'adductors': 'Adductors',
+        'abduct': 'Abductors', 'abductors': 'Abductors',
+        'lat': 'Lats', 'lats': 'Lats',
+        'middle back': 'Middle Back',
+        'lower back': 'Lower Back',
+        'trapezius': 'Trapezius', 'traps': 'Trapezius',
+        'neck': 'Neck',
+        'upper': 'Upper', 'middle': 'Middle', 'lower': 'Lower',
+        'front': 'Front', 'rear': 'Rear',
+        'obliques': 'Obliques', 'oblique': 'Obliques',
+        'biceps': 'Biceps', 'brachialis': 'Brachialis',
+        'compound': 'Compound', 'seated': 'Seated', 'lying': 'Lying',
+        'wrist curls': 'Wrist Curls', 'grip': 'Grip',
+        'rotator cuff': 'Rotator Cuff',
+        'general': 'General'
+      };
+
+      function normalizeSubgroup(s) {
+        if (!s) return 'General';
+        const key = String(s).toLowerCase().trim();
+        return SUBGROUP_NORMALIZE[key] || s;
+      }
+
       function assignSubgroup(e) {
-        const isMM = e.src === 'mm';
-        const isBF = e.src === 'bf';
         const nameLower = (e.nE || '').toLowerCase();
         const existingSub = e.sE || '';
-
-        // For PG: keep existing subgroup unless it's "General"
-        if (!isMM) {
-          if (existingSub && existingSub.toLowerCase() !== 'general') {
-            return existingSub;
+        if (e.src === 'mm') {
+          switch (e.g) {
+            case 'elbow_flexors':
+              if (nameLower.includes('hammer')) return 'Brachialis';
+              if (nameLower.includes('reverse') || nameLower.includes('zottman')) return 'Brachioradialis';
+              return 'Biceps';
+            case 'chest':
+              if (nameLower.includes('incline')) return 'Upper';
+              if (nameLower.includes('decline') || nameLower.includes('dip')) return 'Lower';
+              return 'Middle';
+            case 'shoulders':
+              if (nameLower.includes('front') && nameLower.includes('raise')) return 'Front';
+              if (nameLower.includes('rear') || nameLower.includes('bent over') || nameLower.includes('face pull')) return 'Rear';
+              if (nameLower.includes('shrug')) return 'Trapezius';
+              return 'Middle';
+            case 'abdominals':
+              if (nameLower.includes('oblique') || nameLower.includes('side') || nameLower.includes('twist') || nameLower.includes('bicycle')) return 'Obliques';
+              if (nameLower.includes('hanging') || nameLower.includes('leg raise') || nameLower.includes('knee raise')) return 'Lower';
+              return 'Upper';
+            case 'triceps':
+              if (nameLower.includes('overhead')) return 'Seated';
+              if (nameLower.includes('lying') || nameLower.includes('skull')) return 'Lying';
+              return 'Compound';
+            case 'back':
+              if (existingSub) return normalizeSubgroup(existingSub);
+              return 'Middle Back';
+            case 'legs':
+              if (existingSub) return normalizeSubgroup(existingSub);
+              return 'Quadriceps';
+            default:
+              return existingSub || 'General';
           }
-          return null; // No subgroup — exercise goes directly under group
         }
-
-        // For MM: assign subgroup based on group + name patterns
-        switch (e.g) {
-          case 'elbow_flexors':
-            if (nameLower.includes('hammer')) return 'Brachialis';
-            if (nameLower.includes('reverse') || nameLower.includes('zottman')) return 'Brachioradialis';
-            if (nameLower.includes('pronation') || nameLower.includes('wrist')) return 'Brachioradialis';
-            return 'Biceps';
-
-          case 'chest':
-            if (nameLower.includes('incline')) return 'Upper';
-            if (nameLower.includes('decline') || nameLower.includes('dip')) return 'Lower';
-            return 'Middle';
-
-          case 'shoulders':
-            if (nameLower.includes('front') && nameLower.includes('raise')) return 'Front';
-            if (nameLower.includes('lateral') || nameLower.includes('side')) return 'Middle';
-            if (nameLower.includes('rear') || nameLower.includes('bent over') ||
-                nameLower.includes('reverse fly') || nameLower.includes('face pull')) return 'Rear';
-            if (nameLower.includes('press')) return 'Middle';
-            if (nameLower.includes('shrug')) return 'Trapezius';
-            return 'Middle';
-
-          case 'abdominals':
-            if (nameLower.includes('oblique') || nameLower.includes('side') || nameLower.includes('twist') ||
-                nameLower.includes('bicycle') || nameLower.includes('russian') || nameLower.includes('windmill') ||
-                nameLower.includes('side bend')) return 'Obliques';
-            if (nameLower.includes('hanging') || nameLower.includes('leg raise') ||
-                nameLower.includes('knee raise') || nameLower.includes('reverse crunch') ||
-                nameLower.includes('hip raise')) return 'Lower';
-            return 'Upper';
-
-          case 'triceps':
-            if (nameLower.includes('overhead') || (nameLower.includes('behind') && nameLower.includes('head'))) return 'Seated';
-            if (nameLower.includes('lying') || nameLower.includes('skull') || nameLower.includes('french')) return 'Lying';
-            if (nameLower.includes('dip') || nameLower.includes('close grip') || nameLower.includes('close-grip') ||
-                nameLower.includes('bench press') || nameLower.includes('push-up') || nameLower.includes('pushup')) return 'Compound';
-            return 'General';
-
-          // Groups that already have meaningful subgroups in MM — keep them
-          case 'back':
-            return existingSub || null;
-          case 'legs':
-            return existingSub || null;
-          case 'forearms':
-            return null; // No meaningful split for forearms
-          case 'stretching':
-            return existingSub && existingSub.toLowerCase() !== 'general' ? existingSub : null;
-          case 'warmup':
-            return existingSub && existingSub.toLowerCase() !== 'general' ? existingSub : null;
-          case 'calisthenics':
-            return existingSub && existingSub.toLowerCase() !== 'general' ? existingSub : null;
-
-          default:
-            return existingSub && existingSub.toLowerCase() !== 'general' ? existingSub : null;
+        if (existingSub) {
+          const norm = normalizeSubgroup(existingSub);
+          if (norm !== 'General') return norm;
         }
+        return 'General';
+      }
+
+      const EQUIPMENT_I18N = {
+        'Barbell': {en:'Barbell',ru:'Штанга',he:'מוט'},
+        'Dumbbell': {en:'Dumbbell',ru:'Гантели',he:'משקולות'},
+        'Cable': {en:'Cable',ru:'Кроссовер',he:'כבל'},
+        'Machine': {en:'Machine',ru:'Тренажёр',he:'מכשיר'},
+        'Bodyweight': {en:'Bodyweight',ru:'Вес тела',he:'משקל גוף'},
+        'Kettlebell': {en:'Kettlebell',ru:'Гиря',he:'קטלבל'},
+        'Band': {en:'Band',ru:'Резинка',he:'גומייה'},
+        'EZ-Bar': {en:'EZ-Bar',ru:'EZ-гриф',he:'EZ בר'},
+        'Plate': {en:'Plate',ru:'Блин',he:'צלחת'},
+        'Other': {en:'Other',ru:'Другое',he:'אחר'}
+      };
+
+      const EQUIPMENT_CANONICAL = {
+        'barbell': 'Barbell',
+        'dumbbells': 'Dumbbell', 'dumbbell': 'Dumbbell',
+        'cable': 'Cable',
+        'machine': 'Machine', 'smith': 'Machine',
+        'bodyweight': 'Bodyweight', 'pull_up_bar': 'Bodyweight',
+        'exercise_ball': 'Bodyweight', 'bosu': 'Bodyweight',
+        'foam_roll': 'Bodyweight',
+        'kettlebells': 'Kettlebell', 'kettlebell': 'Kettlebell',
+        'bands': 'Band', 'band': 'Band',
+        'ez_bar': 'EZ-Bar', 'ez-bar': 'EZ-Bar',
+        'medicine_ball': 'Plate',
+        'plate': 'Plate',
+        'other': 'Bodyweight'
+      };
+
+      function normalizeEquipment(e) {
+        const key = String(e || '').toLowerCase();
+        return EQUIPMENT_CANONICAL[key] || 'Bodyweight';
       }
 
       return raw.map(e => {
-        const isMM = e.src === 'mm';
         const subgroup = assignSubgroup(e);
-        const folderPath = subgroup
-          ? [e.g, subgroup.toLowerCase().replace(/\s+/g, '_')]
-          : [e.g];
-
-        // Apply group display-name overrides
+        const equipmentName = normalizeEquipment(e.e);
+        const folderPath = [
+          e.g,
+          subgroup.toLowerCase().replace(/\s+/g, '_'),
+          equipmentName.toLowerCase().replace(/[^a-z0-9]+/g, '_')
+        ];
         const groupRu = GROUP_RU_OVERRIDES[e.g] || e.gR;
         const groupHe = GROUP_HE_OVERRIDES[e.g] || e.gH;
-
         return {
           id: e.id,
           source: (e.src === 'mm' ? 'muscle_motion' : (e.src === 'bf' ? 'burnfit' : 'private_gym')),
           group_canonical: e.g,
           group_en: e.gE, group_ru: groupRu, group_he: groupHe,
-          subgroup_en: subgroup || '', subgroup_ru: subgroup || '', subgroup_he: subgroup || '',
-          equipment_type: e.e,
-          equipment_en: e.eE, equipment_ru: e.eR, equipment_he: e.eH,
+          subgroup_en: subgroup, subgroup_ru: subgroup, subgroup_he: subgroup,
+          equipment_type: equipmentName.toLowerCase().replace(/[^a-z0-9]+/g, '_'),
+          equipment_en: equipmentName,
+          equipment_ru: EQUIPMENT_I18N[equipmentName] ? EQUIPMENT_I18N[equipmentName].ru : equipmentName,
+          equipment_he: EQUIPMENT_I18N[equipmentName] ? EQUIPMENT_I18N[equipmentName].he : equipmentName,
           name_en: e.nE, name_ru: e.nR, name_he: e.nH,
           technique_en: e.t || '',
           technique_ru: e.tRu || '',
@@ -7603,13 +7646,14 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       const lang = currentLang();
 
       if (!query) {
-        // Tree view with Muscle Motion / Private Gym roots
+        // Tree view with Muscle Motion / Private Gym / Burnfit roots
         const root = { children: {
           muscle_motion: { name: 'muscle_motion', label: 'Muscle Motion', pathKey: 'muscle_motion', children: {}, exercises: [] },
-          private_gym: { name: 'private_gym', label: 'Private Gym', pathKey: 'private_gym', children: {}, exercises: [] }
+          private_gym: { name: 'private_gym', label: 'Private Gym', pathKey: 'private_gym', children: {}, exercises: [] },
+          burnfit: { name: 'burnfit', label: 'Burnfit', pathKey: 'burnfit', children: {}, exercises: [] }
         }, exercises: [] };
         filtered.forEach(e => {
-          const sourceKey = e.source === 'muscle_motion' ? 'muscle_motion' : 'private_gym';
+          const sourceKey = e.source === 'muscle_motion' ? 'muscle_motion' : (e.source === 'burnfit' ? 'burnfit' : 'private_gym');
           const sourceNode = root.children[sourceKey];
           // folder_path is now [group] or [group, subgroup] — no equipment level
           const path = e.folder_path && e.folder_path.length > 0
@@ -7651,8 +7695,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               if (child.exercises.length > 0) {
                 child.exercises.forEach(e => {
                   const name = e['name_' + lang] || e.name_en || '?';
-                  const src = e.source === 'muscle_motion' ? 'MM' : 'PG';
-                  const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+                  const src = e.source === 'muscle_motion' ? 'MM' : (e.source === 'burnfit' ? 'BF' : 'PG');
+                  const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : (e.source === 'burnfit' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
                   const hasPhoto = e.images && e.images.length > 0;
                   html += `<div data-pb-pick="${escapeAttr(e.id)}" class="flex items-center gap-2 bg-surface-2 border border-border rounded-lg p-2 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer" style="margin-inline-start: ${(depth + 1) * 16 + 8}px">
                     <div class="w-7 h-7 rounded-lg shrink-0 overflow-hidden bg-surface border border-border grid place-items-center">
@@ -7689,8 +7733,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         list.innerHTML = filtered.map(e => {
           const name = e['name_' + lang] || e.name_en || '?';
           const group = e['group_' + lang] || e.group_en || '';
-          const src = e.source === 'muscle_motion' ? 'MM' : 'PG';
-          const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+          const src = e.source === 'muscle_motion' ? 'MM' : (e.source === 'burnfit' ? 'BF' : 'PG');
+          const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : (e.source === 'burnfit' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
           const hasPhoto = e.images && e.images.length > 0;
           return `<div data-pb-pick="${escapeAttr(e.id)}" class="flex items-center gap-3 bg-surface-2 border border-border rounded-xl p-3 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer">
             <div class="w-9 h-9 rounded-lg shrink-0 overflow-hidden bg-surface border border-border grid place-items-center">
@@ -9582,10 +9626,28 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       return e['equipment_' + lang] || e.equipment_en || '';
     }
 
+    // Body map filter state
+    let _bmGroup = null;
+    let _bmSubgroup = null;
+
+    function setBodyMapFilter(group, subgroup) {
+      _bmGroup = group || null;
+      _bmSubgroup = subgroup || null;
+      if (_bmGroup) _expanded.groups.add(_bmGroup);
+      applyFilters();
+    }
+    function clearBodyMapFilter() {
+      _bmGroup = null;
+      _bmSubgroup = null;
+      applyFilters();
+    }
+
     /** Re-apply source + search filters, then build tree. */
     function applyFilters() {
       _filtered = _all.filter(e => {
         if (_source !== 'all' && e.source !== _source) return false;
+        if (_bmGroup && (e.group_canonical || e.g) !== _bmGroup) return false;
+        if (_bmSubgroup && (e.subgroup_en || e.sE || '') !== _bmSubgroup) return false;
         if (_search) {
           const q = _search.toLowerCase();
           const names = [e.name_en, e.name_ru, e.name_he, e.group_en, e.group_ru, e.group_he]
@@ -9768,8 +9830,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         if (node.exercises.length > 0) {
           node.exercises.forEach(e => {
             const name = exName(e);
-            const src = e.source === 'muscle_motion' ? 'MM' : 'PG';
-            const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+            const src = e.source === 'muscle_motion' ? 'MM' : (e.source === 'burnfit' ? 'BF' : 'PG');
+            const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : (e.source === 'burnfit' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
             const hasPhoto = e.images && e.images.length > 0;
             const hasVideo = e.video_url && extractYouTubeId(e.video_url);
             html += `<div data-exercise-id="${escAttr(e.id)}" class="exercise-card flex items-center gap-2 bg-surface-2 border border-border rounded-lg p-2 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer" style="margin-inline-start: ${(depth + 1) * 20}px"${_editMode ? ' draggable="true"' : ''}>
@@ -10643,7 +10705,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     return { load, refresh, applyFilters, openCreate, openView, openEdit, closeModal,
              saveFromForm, deleteCurrent, setSearch, setSource, setGroupFilter, updateDatalists,
              toggleEditMode, renameFolder, deleteFolder, moveExercise, moveGroup,
-             addRootFolder, promptAddFolder, moveItem, openFolderPicker };
+             addRootFolder, promptAddFolder, moveItem, openFolderPicker,
+             setBodyMapFilter, clearBodyMapFilter };
   })();
 
   /* =====================================================================
@@ -11633,13 +11696,14 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
       // If no search query → show tree with source root folders (collapsed)
       if (!query) {
-        // Build folder tree with two roots: Muscle Motion + Private Gym
+        // Build folder tree with three roots: Muscle Motion + Private Gym + Burnfit
         const root = { children: {
           muscle_motion: { name: 'muscle_motion', label: 'Muscle Motion', pathKey: 'muscle_motion', children: {}, exercises: [] },
-          private_gym: { name: 'private_gym', label: 'Private Gym', pathKey: 'private_gym', children: {}, exercises: [] }
+          private_gym: { name: 'private_gym', label: 'Private Gym', pathKey: 'private_gym', children: {}, exercises: [] },
+          burnfit: { name: 'burnfit', label: 'Burnfit', pathKey: 'burnfit', children: {}, exercises: [] }
         }, exercises: [] };
         filtered.forEach(e => {
-          const sourceKey = e.source === 'muscle_motion' ? 'muscle_motion' : 'private_gym';
+          const sourceKey = e.source === 'muscle_motion' ? 'muscle_motion' : (e.source === 'burnfit' ? 'burnfit' : 'private_gym');
           const sourceNode = root.children[sourceKey];
           const path = e.folder_path || [e.group_canonical || 'other', 'general', e.equipment_type || 'other'];
           let node = sourceNode;
@@ -11687,8 +11751,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               if (child.exercises.length > 0) {
                 child.exercises.forEach(e => {
                   const name = e['name_' + lang] || e.name_en || '?';
-                  const src = e.source === 'muscle_motion' ? 'MM' : 'PG';
-                  const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+                  const src = e.source === 'muscle_motion' ? 'MM' : (e.source === 'burnfit' ? 'BF' : 'PG');
+                  const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : (e.source === 'burnfit' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
                   const hasPhoto = e.images && e.images.length > 0;
                   html += `<div data-pick-exercise="${escapeAttr(e.id)}" class="flex items-center gap-2 bg-surface-2 border border-border rounded-lg p-2 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer" style="margin-inline-start: ${(depth + 1) * 16 + 8}px">
                     <div class="w-7 h-7 rounded-lg shrink-0 overflow-hidden bg-surface border border-border grid place-items-center">
@@ -11726,8 +11790,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         list.innerHTML = filtered.map(e => {
           const name = e['name_' + lang] || e.name_en || '?';
           const group = e['group_' + lang] || e.group_en || '';
-          const src = e.source === 'muscle_motion' ? 'MM' : 'PG';
-          const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+          const src = e.source === 'muscle_motion' ? 'MM' : (e.source === 'burnfit' ? 'BF' : 'PG');
+          const srcClass = e.source === 'muscle_motion' ? 'bg-accent/15 text-accent' : (e.source === 'burnfit' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
           const hasPhoto = e.images && e.images.length > 0;
           return `
             <div data-pick-exercise="${escapeAttr(e.id)}" class="flex items-center gap-3 bg-surface-2 border border-border rounded-xl p-3 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer">
@@ -12626,157 +12690,243 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     //   - A highlight overlay for specular reflection
     //   - A drop shadow for depth
     //   - data-group attribute for click filtering
-    const SVG_FRONT = `<svg viewBox="0 0 140 320" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+    // ============================================================
+    // BODY MAP SVGs — front, back, and side (profile) views
+    // Each muscle zone has data-group AND data-subgroup so clicking
+    // filters exercises to that exact sub-muscle.
+    // ============================================================
+
+    const SVG_FRONT = `<svg viewBox="0 0 160 360" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
       <defs>
         <linearGradient id="skinG" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.9"/>
-          <stop offset="50%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.6"/>
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
         </linearGradient>
         <radialGradient id="muscleG" cx="50%" cy="35%" r="65%">
           <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
-          <stop offset="70%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.5"/>
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
         </radialGradient>
-        <linearGradient id="muscleHL" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="white" stop-opacity="0.15"/>
-          <stop offset="50%" stop-color="white" stop-opacity="0"/>
-          <stop offset="100%" stop-color="black" stop-opacity="0.1"/>
-        </linearGradient>
       </defs>
-      <!-- Head with gradient -->
-      <ellipse cx="70" cy="25" rx="18" ry="22" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="70" cy="22" rx="14" ry="16" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/>
+      <!-- Head -->
+      <ellipse cx="80" cy="28" rx="20" ry="24" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Neck -->
-      <path d="M62,44 Q70,48 78,44 L76,56 Q70,58 64,56 Z" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Trapezius (top shoulders) -->
-      <path d="M40,56 Q70,50 100,56 L92,64 Q70,60 48,64 Z" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <!-- Left Deltoid (shoulder) -->
-      <ellipse class="bm-muscle" data-group="shoulders" cx="38" cy="60" rx="16" ry="12" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="36" cy="56" rx="10" ry="6" fill="url(#muscleHL)" pointer-events="none"/>
-      <!-- Right Deltoid -->
-      <ellipse class="bm-muscle" data-group="shoulders" cx="102" cy="60" rx="16" ry="12" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="104" cy="56" rx="10" ry="6" fill="url(#muscleHL)" pointer-events="none"/>
-      <!-- Left Pec (chest) -->
-      <path class="bm-muscle" data-group="chest" d="M44,62 Q70,56 68,68 L66,88 Q58,92 48,86 Q44,74 44,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Right Pec -->
-      <path class="bm-muscle" data-group="chest" d="M96,62 Q70,56 72,68 L74,88 Q82,92 92,86 Q96,74 96,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path d="M70,48 Q80,52 90,48 L88,62 Q80,64 72,62 Z" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Neck (Sternocleidomastoid) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M72,52 Q76,58 78,62 L74,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M88,52 Q84,58 82,62 L86,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Upper Trapezius (visible from front) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M44,62 Q80,54 116,62 L106,72 Q80,68 54,72 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Left Front Deltoid -->
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M42,68 Q34,72 36,86 Q40,90 48,86 Q44,76 44,68 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Front Deltoid -->
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M118,68 Q126,72 124,86 Q120,90 112,86 Q116,76 116,68 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Middle Deltoid (side of shoulder) -->
+      <ellipse class="bm-muscle" data-group="shoulders" data-subgroup="Middle" cx="36" cy="76" rx="8" ry="10" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Middle Deltoid -->
+      <ellipse class="bm-muscle" data-group="shoulders" data-subgroup="Middle" cx="124" cy="76" rx="8" ry="10" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Upper Pec (clavicular head) -->
+      <path class="bm-muscle" data-group="chest" data-subgroup="Upper" d="M52,68 Q80,62 76,78 L72,86 Q60,86 52,80 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Upper Pec -->
+      <path class="bm-muscle" data-group="chest" data-subgroup="Upper" d="M108,68 Q80,62 84,78 L88,86 Q100,86 108,80 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Middle/Lower Pec -->
+      <path class="bm-muscle" data-group="chest" data-subgroup="Middle" d="M52,82 Q60,86 72,86 L72,100 Q62,102 54,96 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="chest" data-subgroup="Lower" d="M54,98 Q62,102 72,100 L72,108 Q62,108 56,104 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Middle/Lower Pec -->
+      <path class="bm-muscle" data-group="chest" data-subgroup="Middle" d="M108,82 Q100,86 88,86 L88,100 Q98,102 106,96 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="chest" data-subgroup="Lower" d="M106,98 Q98,102 88,100 L88,108 Q98,108 104,104 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Sternum line -->
-      <line x1="70" y1="62" x2="70" y2="88" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
-      <!-- Pec highlights -->
-      <path d="M48,64 Q60,60 64,66" fill="none" stroke="white" stroke-width="1" opacity="0.1" pointer-events="none"/>
-      <path d="M92,64 Q80,60 76,66" fill="none" stroke="white" stroke-width="1" opacity="0.1" pointer-events="none"/>
+      <line x1="80" y1="68" x2="80" y2="108" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
       <!-- Left Bicep -->
-      <path class="bm-muscle" data-group="elbow_flexors" d="M30,68 Q26,72 28,86 Q30,92 38,90 Q40,80 38,70 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="33" cy="78" rx="5" ry="8" fill="url(#muscleHL)" pointer-events="none"/>
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Biceps" d="M34,90 Q28,96 30,112 Q34,118 42,114 Q44,102 42,92 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Bicep -->
-      <path class="bm-muscle" data-group="elbow_flexors" d="M110,68 Q114,72 112,86 Q110,92 102,90 Q100,80 102,70 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="107" cy="78" rx="5" ry="8" fill="url(#muscleHL)" pointer-events="none"/>
-      <!-- Left Forearm -->
-      <path class="bm-muscle" data-group="forearms" d="M24,92 Q20,96 22,112 Q24,120 30,118 Q32,104 30,94 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Biceps" d="M126,90 Q132,96 130,112 Q126,118 118,114 Q116,102 118,92 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Brachialis (between bicep and tricep) -->
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M28,100 Q26,108 28,116 L32,116 Q30,108 30,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M132,100 Q134,108 132,116 L128,116 Q130,108 130,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Left Forearm (flexors) -->
+      <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M24,118 Q18,124 20,142 Q24,148 30,144 Q32,128 30,118 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Forearm -->
-      <path class="bm-muscle" data-group="forearms" d="M116,92 Q120,96 118,112 Q116,120 110,118 Q108,104 110,94 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Abs (6-pack) -->
-      <path class="bm-muscle" data-group="abdominals" d="M52,88 L88,88 L86,128 Q70,132 54,128 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Ab lines for 6-pack definition -->
-      <line x1="70" y1="88" x2="70" y2="128" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
-      <line x1="54" y1="98" x2="86" y2="98" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.2"/>
-      <line x1="54" y1="108" x2="86" y2="108" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.2"/>
-      <line x1="54" y1="118" x2="86" y2="118" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.2"/>
-      <!-- Obliques (side abs) -->
-      <path class="bm-muscle" data-group="abdominals" d="M48,90 Q44,100 48,124 L52,124 L52,92 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
-      <path class="bm-muscle" data-group="abdominals" d="M92,90 Q96,100 92,124 L88,124 L88,92 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
-      <!-- Left Quad -->
-      <path class="bm-muscle" data-group="legs" d="M50,130 Q44,134 46,160 Q48,185 56,188 Q60,186 58,160 Q58,138 56,130 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="51" cy="155" rx="5" ry="12" fill="url(#muscleHL)" pointer-events="none"/>
+      <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M136,118 Q142,124 140,142 Q136,148 130,144 Q128,128 130,118 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Upper Abs (Rectus Abdominis — upper portion) -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Upper" d="M58,108 L102,108 L102,124 Q80,128 58,124 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Middle Abs -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Upper" d="M58,124 L102,124 L102,140 Q80,144 58,140 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Lower Abs -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Lower" d="M58,140 L102,140 L100,158 Q80,162 60,158 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Ab lines (6-pack definition) -->
+      <line x1="80" y1="108" x2="80" y2="158" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
+      <line x1="58" y1="124" x2="102" y2="124" stroke="rgb(var(--c-border))" stroke-width="0.4" opacity="0.25"/>
+      <line x1="58" y1="140" x2="102" y2="140" stroke="rgb(var(--c-border))" stroke-width="0.4" opacity="0.25"/>
+      <!-- Left Oblique -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M52,108 Q48,124 52,156 L58,156 L58,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Right Oblique -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M108,108 Q112,124 108,156 L102,156 L102,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Serratus Anterior (left, finger-like muscles on side of ribs) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M48,110 L52,118 M48,118 L52,126 M48,126 L52,134" stroke="url(#muscleG)" stroke-width="2" opacity="0.6" fill="none"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M112,110 L108,118 M112,118 L108,126 M112,126 L108,134" stroke="url(#muscleG)" stroke-width="2" opacity="0.6" fill="none"/>
+      <!-- Left Quad (Rectus Femoris + Vastus Lateralis) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M56,158 Q50,164 52,196 Q56,220 64,222 Q68,220 66,196 Q66,168 64,158 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Quad -->
-      <path class="bm-muscle" data-group="legs" d="M90,130 Q96,134 94,160 Q92,185 84,188 Q80,186 82,160 Q82,138 84,130 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="89" cy="155" rx="5" ry="12" fill="url(#muscleHL)" pointer-events="none"/>
-      <!-- Inner quad (adductor) -->
-      <path class="bm-muscle" data-group="legs" d="M58,132 Q60,145 58,168 Q56,178 62,180 Q64,170 64,145 Q64,134 62,130 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
-      <path class="bm-muscle" data-group="legs" d="M82,132 Q80,145 82,168 Q84,178 78,180 Q76,170 76,145 Q76,134 78,130 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
-      <!-- Left Shin -->
-      <path class="bm-muscle" data-group="legs" d="M52,190 Q48,194 50,215 Q52,228 56,230 Q58,228 56,215 Q56,196 56,192 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Right Shin -->
-      <path class="bm-muscle" data-group="legs" d="M88,190 Q92,194 90,215 Q88,228 84,230 Q82,228 84,215 Q84,196 84,192 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M104,158 Q110,164 108,196 Q104,220 96,222 Q92,220 94,196 Q94,168 96,158 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Vastus Lateralis (outer quad) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M50,170 Q48,190 52,210 L56,210 Q54,190 54,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M110,170 Q112,190 108,210 L104,210 Q106,190 106,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Left Adductor (inner thigh) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M66,162 Q68,180 66,206 Q64,214 70,214 Q72,200 72,176 Q72,166 70,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Right Adductor -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M94,162 Q92,180 94,206 Q96,214 90,214 Q88,200 88,176 Q88,166 90,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Left Tibialis Anterior (shin) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M58,228 Q54,232 56,256 Q60,262 64,258 Q62,240 62,228 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Tibialis -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M102,228 Q106,232 104,256 Q100,262 96,258 Q98,240 98,228 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Feet -->
-      <ellipse cx="54" cy="238" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="86" cy="238" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <ellipse cx="60" cy="270" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <ellipse cx="100" cy="270" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Hip Flexors (lower abs area) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M60,156 L76,156 L76,164 Q68,166 60,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M100,156 L84,156 L84,164 Q92,166 100,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
     </svg>`;
 
-    const SVG_BACK = `<svg viewBox="0 0 140 320" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+    const SVG_BACK = `<svg viewBox="0 0 160 360" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
       <defs>
         <linearGradient id="skinGB" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.9"/>
-          <stop offset="50%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.6"/>
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
         </linearGradient>
         <radialGradient id="muscleGB" cx="50%" cy="35%" r="65%">
           <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
-          <stop offset="70%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.5"/>
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
         </radialGradient>
-        <linearGradient id="muscleHLB" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="white" stop-opacity="0.15"/>
-          <stop offset="50%" stop-color="white" stop-opacity="0"/>
-          <stop offset="100%" stop-color="black" stop-opacity="0.1"/>
-        </linearGradient>
       </defs>
-      <!-- Head -->
-      <ellipse cx="70" cy="25" rx="18" ry="22" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="70" cy="22" rx="14" ry="16" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/>
+      <!-- Head (back) -->
+      <ellipse cx="80" cy="28" rx="20" ry="24" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Neck -->
-      <path d="M62,44 Q70,48 78,44 L76,56 Q70,58 64,56 Z" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Trapezius -->
-      <path class="bm-muscle" data-group="back" d="M40,56 Q70,48 100,56 L90,76 Q70,70 50,76 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <path d="M50,58 Q70,52 90,58" fill="none" stroke="white" stroke-width="1" opacity="0.1" pointer-events="none"/>
+      <path d="M70,48 Q80,52 90,48 L88,62 Q80,64 72,62 Z" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Upper Trapezius (neck to shoulders) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M44,62 Q80,52 116,62 L108,76 Q80,70 52,76 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Middle Trapezius (between shoulder blades) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M52,80 Q80,76 108,80 L100,96 Q80,92 60,96 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Lower Trapezius (V-shape to lower back) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M60,98 Q80,94 100,98 L84,118 Q80,116 76,118 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
       <!-- Left Rear Deltoid -->
-      <ellipse class="bm-muscle" data-group="shoulders" cx="38" cy="60" rx="16" ry="12" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="36" cy="56" rx="10" ry="6" fill="url(#muscleHLB)" pointer-events="none"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M42,68 Q34,72 36,86 Q40,90 48,86 Q44,76 44,68 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Rear Deltoid -->
-      <ellipse class="bm-muscle" data-group="shoulders" cx="102" cy="60" rx="16" ry="12" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="104" cy="56" rx="10" ry="6" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Left Lat (back) -->
-      <path class="bm-muscle" data-group="back" d="M42,72 Q70,66 68,86 L64,114 Q56,116 48,106 Q42,88 42,72 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M118,68 Q126,72 124,86 Q120,90 112,86 Q116,76 116,68 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Lat (Latissimus Dorsi) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M44,82 Q80,76 76,98 L72,128 Q60,130 50,118 Q42,100 44,82 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Lat -->
-      <path class="bm-muscle" data-group="back" d="M98,72 Q70,66 72,86 L76,114 Q84,116 92,106 Q98,88 98,72 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M116,82 Q80,76 84,98 L88,128 Q100,130 110,118 Q118,100 116,82 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Rhomboids (between shoulder blades, hidden under trap) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Middle Back" d="M62,84 Q80,82 98,84 L92,98 Q80,96 68,98 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Left Infraspinatus/Teres (rotator cuff area) -->
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M46,86 Q42,94 46,102 L54,100 Q52,92 52,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M114,86 Q118,94 114,102 L106,100 Q108,92 108,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
       <!-- Spine line -->
-      <line x1="70" y1="72" x2="70" y2="116" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
-      <!-- Left Tricep -->
-      <path class="bm-muscle" data-group="triceps" d="M30,68 Q24,74 26,88 Q28,94 34,92 Q36,82 34,70 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="30" cy="80" rx="4" ry="8" fill="url(#muscleHLB)" pointer-events="none"/>
+      <line x1="80" y1="82" x2="80" y2="132" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
+      <!-- Left Tricep (long head) -->
+      <path class="bm-muscle" data-group="triceps" data-subgroup="Compound" d="M34,90 Q26,96 28,114 Q32,120 40,116 Q42,102 40,92 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Tricep -->
-      <path class="bm-muscle" data-group="triceps" d="M110,68 Q116,74 114,88 Q112,94 106,92 Q104,82 106,70 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="110" cy="80" rx="4" ry="8" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Left Forearm -->
-      <path class="bm-muscle" data-group="forearms" d="M22,94 Q18,98 20,114 Q22,122 28,120 Q30,106 28,96 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Right Forearm -->
-      <path class="bm-muscle" data-group="forearms" d="M118,94 Q122,98 120,114 Q118,122 112,120 Q110,106 112,96 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <!-- Lower Back -->
-      <path class="bm-muscle" data-group="back" d="M50,116 L90,116 L88,138 Q70,142 52,138 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <path d="M58,120 Q70,118 82,120" fill="none" stroke="white" stroke-width="0.5" opacity="0.1" pointer-events="none"/>
-      <!-- Left Glute -->
-      <ellipse class="bm-muscle" data-group="legs" cx="54" cy="148" rx="16" ry="14" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="52" cy="144" rx="10" ry="8" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Right Glute -->
-      <ellipse class="bm-muscle" data-group="legs" cx="86" cy="148" rx="16" ry="14" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="88" cy="144" rx="10" ry="8" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Left Hamstring -->
-      <path class="bm-muscle" data-group="legs" d="M48,164 Q42,168 44,190 Q46,210 54,212 Q58,210 56,190 Q56,170 54,164 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="49" cy="185" rx="5" ry="10" fill="url(#muscleHLB)" pointer-events="none"/>
+      <path class="bm-muscle" data-group="triceps" data-subgroup="Compound" d="M126,90 Q134,96 132,114 Q128,120 120,116 Q118,102 120,92 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Forearm (extensors) -->
+      <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M24,122 Q18,128 20,146 Q24,152 30,148 Q32,132 30,122 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M136,122 Q142,128 140,146 Q136,152 130,148 Q128,132 130,122 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Lower Back (Erector Spinae) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M58,128 L102,128 L100,152 Q80,156 60,152 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Erector Spinae (column along spine) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M68,130 Q66,144 70,156 L74,156 Q72,144 72,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,130 Q94,144 90,156 L86,156 Q88,144 88,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Left Gluteus Maximus -->
+      <ellipse class="bm-muscle" data-group="legs" data-subgroup="Glutes" cx="62" cy="166" rx="18" ry="16" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Right Gluteus Maximus -->
+      <ellipse class="bm-muscle" data-group="legs" data-subgroup="Glutes" cx="98" cy="166" rx="18" ry="16" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Glute crease -->
+      <line x1="80" y1="156" x2="80" y2="180" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
+      <!-- Left Hamstring (Biceps Femoris) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M54,184 Q46,190 48,216 Q52,236 60,238 Q66,236 64,216 Q64,194 62,184 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Hamstring -->
-      <path class="bm-muscle" data-group="legs" d="M92,164 Q98,168 96,190 Q94,210 86,212 Q82,210 84,190 Q84,170 86,164 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="91" cy="185" rx="5" ry="10" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Left Calf -->
-      <path class="bm-muscle" data-group="legs" d="M50,214 Q44,218 46,238 Q48,252 54,254 Q58,252 56,238 Q56,216 56,214 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="50" cy="230" rx="4" ry="10" fill="url(#muscleHLB)" pointer-events="none"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M106,184 Q114,190 112,216 Q108,236 100,238 Q94,236 96,216 Q96,194 98,184 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Left Semitendinosus (inner hamstring) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M64,186 Q66,210 62,232 L66,232 Q70,210 68,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M96,186 Q94,210 98,232 L94,232 Q90,210 92,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Left Calf (Gastrocnemius) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M54,242 Q46,248 48,272 Q52,288 60,290 Q66,288 64,272 Q62,250 62,242 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Calf -->
-      <path class="bm-muscle" data-group="legs" d="M90,214 Q96,218 94,238 Q92,252 86,254 Q82,252 84,238 Q84,216 84,214 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="90" cy="230" rx="4" ry="10" fill="url(#muscleHLB)" pointer-events="none"/>
-      <!-- Feet -->
-      <ellipse cx="52" cy="262" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
-      <ellipse cx="88" cy="262" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M106,242 Q114,248 112,272 Q108,288 100,290 Q94,288 96,272 Q98,250 98,242 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Soleus (deeper calf muscle, lower) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M52,272 Q50,282 54,288 L60,288 Q58,280 58,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M108,272 Q110,282 106,288 L100,288 Q102,280 102,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <!-- Feet (back) -->
+      <ellipse cx="58" cy="298" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <ellipse cx="102" cy="298" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
     </svg>`;
+
+    // Side (profile) view — left-facing silhouette
+    const SVG_SIDE = `<svg viewBox="0 0 200 360" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+      <defs>
+        <linearGradient id="skinGS" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
+        </linearGradient>
+        <radialGradient id="muscleGS" cx="50%" cy="35%" r="65%">
+          <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
+          <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
+        </radialGradient>
+      </defs>
+      <!-- Head (profile, facing left) -->
+      <ellipse cx="60" cy="32" rx="22" ry="26" fill="url(#skinGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Nose profile bump -->
+      <path d="M40,30 Q36,32 38,36 L42,36 Z" fill="url(#skinGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <!-- Neck -->
+      <path d="M56,56 Q62,60 70,56 L68,68 Q62,70 56,68 Z" fill="url(#skinGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Sternocleidomastoid (neck muscle) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M58,58 Q60,66 64,68 L66,68 Q62,62 60,58 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
+      <!-- Upper Trapezius (side view — bulge between neck and shoulder) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M68,58 Q82,62 92,72 L86,82 Q76,76 68,72 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Side Deltoid (the round shoulder muscle visible from side) -->
+      <ellipse class="bm-muscle" data-group="shoulders" data-subgroup="Middle" cx="92" cy="82" rx="12" ry="14" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Front Deltoid (front edge) -->
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M84,76 Q78,80 80,92 Q86,94 90,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Rear Deltoid (back edge) -->
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M100,76 Q106,80 104,92 Q98,94 94,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Pec (chest, side view — front of upper torso) -->
+      <path class="bm-muscle" data-group="chest" data-subgroup="Upper" d="M76,92 Q72,98 76,108 L84,106 Q82,98 82,92 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="chest" data-subgroup="Middle" d="M76,108 Q74,116 78,124 L86,122 Q82,114 82,108 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="chest" data-subgroup="Lower" d="M78,124 Q80,130 84,134 L90,130 Q86,126 86,122 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Lat (side view — back of torso below shoulder) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M96,98 Q104,108 104,128 L96,128 Q92,112 92,102 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Bicep (front of upper arm) -->
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Biceps" d="M86,90 Q92,96 96,114 Q98,122 90,120 Q86,108 84,94 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Tricep (back of upper arm) -->
+      <path class="bm-muscle" data-group="triceps" data-subgroup="Compound" d="M100,90 Q108,98 110,116 Q108,124 100,122 Q98,108 98,94 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Forearm -->
+      <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M90,124 Q96,130 100,148 Q102,156 96,156 Q92,142 88,128 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Abs (side view — front of torso) -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Upper" d="M78,134 Q74,140 76,148 L84,148 Q82,140 82,134 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Lower" d="M76,148 Q74,156 78,164 L86,162 Q82,154 84,148 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Oblique (side of abs) -->
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M86,134 Q92,142 92,158 L86,158 Q86,144 84,134 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Lower Back (side view — lower curve) -->
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,148 Q98,154 98,164 L92,164 Q90,156 90,148 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Glute (side view — buttock bulge) -->
+      <ellipse class="bm-muscle" data-group="legs" data-subgroup="Glutes" cx="98" cy="174" rx="14" ry="14" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Hip Flexor (front of hip) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M78,164 Q74,172 78,180 L86,178 Q82,170 84,164 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <!-- Quad (front of thigh) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M82,180 Q74,190 76,220 Q82,232 90,228 Q92,210 90,184 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Hamstring (back of thigh) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M98,180 Q108,190 106,222 Q100,234 92,230 Q92,210 94,184 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Calf (back of lower leg) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M98,234 Q108,244 104,272 Q98,284 92,282 Q90,260 92,236 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Tibialis Anterior (shin, front of lower leg) -->
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M82,234 Q76,244 78,270 Q84,282 90,280 Q88,258 88,236 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+      <!-- Foot (profile) -->
+      <path d="M76,282 Q70,288 70,294 L98,294 Q100,288 96,282 Z" fill="url(#skinGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
+    </svg>`;
+
+    // Expose SVGs globally so the Exercises tab can render its own body map
+    window.BM_SVG_FRONT = SVG_FRONT;
+    window.BM_SVG_BACK = SVG_BACK;
+    window.BM_SVG_SIDE = SVG_SIDE;
 
     /** Open the body map picker.
      * @param {Function} onPick — called with exercise object when [+] clicked
@@ -12804,8 +12954,19 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       // Wire tab buttons
       const tabPG = document.getElementById('bm-tab-pg');
       const tabMM = document.getElementById('bm-tab-mm');
-      if (tabPG) tabPG.onclick = () => { _tab = 'body'; _sourceFilter = 'private_gym'; tabPG.classList.add('bg-primary','text-white'); tabPG.classList.remove('text-muted'); if (tabMM) { tabMM.classList.remove('bg-primary','text-white'); tabMM.classList.add('text-muted'); } renderAll(); };
-      if (tabMM) tabMM.onclick = () => { _tab = 'body'; _sourceFilter = 'muscle_motion'; tabMM.classList.add('bg-primary','text-white'); tabMM.classList.remove('text-muted'); if (tabPG) { tabPG.classList.remove('bg-primary','text-white'); tabPG.classList.add('text-muted'); } renderAll(); };
+      const tabBF = document.getElementById('bm-tab-bf');
+      const tabAll = document.getElementById('bm-tab-all');
+      const setActiveTab = (active) => {
+        [tabAll, tabPG, tabMM, tabBF].forEach(btn => {
+          if (!btn) return;
+          if (btn === active) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
+          else { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
+        });
+      };
+      if (tabAll) tabAll.onclick = () => { _tab = 'body'; _sourceFilter = null; setActiveTab(tabAll); renderAll(); };
+      if (tabPG) tabPG.onclick = () => { _tab = 'body'; _sourceFilter = 'private_gym'; setActiveTab(tabPG); renderAll(); };
+      if (tabMM) tabMM.onclick = () => { _tab = 'body'; _sourceFilter = 'muscle_motion'; setActiveTab(tabMM); renderAll(); };
+      if (tabBF) tabBF.onclick = () => { _tab = 'body'; _sourceFilter = 'burnfit'; setActiveTab(tabBF); renderAll(); };
       const tabFav = document.getElementById('bm-tab-favorites');
       if (tabFav) tabFav.onclick = () => { _tab = 'favorites'; renderAll(); };
       const tabRecent = document.getElementById('bm-tab-recent');
@@ -12912,50 +13073,42 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     function renderBodySVG() {
       const container = document.getElementById('bm-svg-container');
       if (container) {
-        container.innerHTML = _view === 'front' ? SVG_FRONT : SVG_BACK;
+        container.innerHTML = _view === 'front' ? SVG_FRONT : _view === 'back' ? SVG_BACK : SVG_SIDE;
         container.querySelectorAll('.bm-muscle').forEach(el => {
           const group = el.getAttribute('data-group');
-          if (_activeGroup === group) el.classList.add('active');
+          const subgroup = el.getAttribute('data-subgroup');
+          if (_activeGroup === group) {
+            if (_activeSubgroup && subgroup !== _activeSubgroup) { el.style.opacity = '0.4'; }
+            else { el.classList.add('active'); el.style.opacity = ''; }
+          }
           el.addEventListener('click', () => {
-            // Clicking a muscle in the SVG toggles that group's filter
-            // AND auto-expands the folder so subgroups are visible.
-            if (_activeGroup === group) {
-              _activeGroup = null;
-              _activeSubgroup = null;
+            if (_activeGroup === group && _activeSubgroup === subgroup) {
+              _activeGroup = null; _activeSubgroup = null;
             } else {
-              _activeGroup = group;
-              _activeSubgroup = null;
-              // Auto-expand the folder so user can see subgroups
+              _activeGroup = group; _activeSubgroup = subgroup || null;
               _expandedGroups.add(group);
             }
-            renderBodySVG();
-            renderGroupTree();
-            renderEquipChips();
-            renderExerciseGrid();
+            renderBodySVG(); renderGroupTree(); renderEquipChips(); renderExerciseGrid();
           });
+          if (subgroup) el.setAttribute('title', subgroup + ' (' + group + ')');
+          else el.setAttribute('title', group);
         });
       }
-      // Wire front/back toggle
       const frontBtn = document.getElementById('bm-view-front');
       const backBtn = document.getElementById('bm-view-back');
-      // Translate labels
+      const sideBtn = document.getElementById('bm-view-side');
       const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
-      const frontLabel = { en: 'Front', ru: 'Спереди', he: 'קדימה' }[lang] || 'Front';
-      const backLabel = { en: 'Back', ru: 'Сзади', he: 'אחורה' }[lang] || 'Back';
-      if (frontBtn) frontBtn.textContent = frontLabel;
-      if (backBtn) backBtn.textContent = backLabel;
-      if (frontBtn) frontBtn.onclick = () => {
-        _view = 'front';
-        renderBodySVG();
-        frontBtn.classList.add('bg-primary','text-white'); frontBtn.classList.remove('text-muted');
-        if (backBtn) { backBtn.classList.remove('bg-primary','text-white'); backBtn.classList.add('text-muted'); }
-      };
-      if (backBtn) backBtn.onclick = () => {
-        _view = 'back';
-        renderBodySVG();
-        backBtn.classList.add('bg-primary','text-white'); backBtn.classList.remove('text-muted');
-        if (frontBtn) { frontBtn.classList.remove('bg-primary','text-white'); frontBtn.classList.add('text-muted'); }
-      };
+      const fl = {en:'Front',ru:'Спереди',he:'קדימה'}[lang]||'Front';
+      const bl = {en:'Back',ru:'Сзади',he:'אחורה'}[lang]||'Back';
+      const sl = {en:'Side',ru:'Сбоку',he:'צד'}[lang]||'Side';
+      if(frontBtn)frontBtn.textContent=fl;
+      if(backBtn)backBtn.textContent=bl;
+      if(sideBtn)sideBtn.textContent=sl;
+      const setViewActive=(a)=>{[frontBtn,backBtn,sideBtn].forEach(b=>{if(!b)return;if(b===a){b.classList.add('bg-primary','text-white');b.classList.remove('text-muted');}else{b.classList.remove('bg-primary','text-white');b.classList.add('text-muted');}});};
+      if(frontBtn)frontBtn.onclick=()=>{_view='front';renderBodySVG();setViewActive(frontBtn);};
+      if(backBtn)backBtn.onclick=()=>{_view='back';renderBodySVG();setViewActive(backBtn);};
+      if(sideBtn)sideBtn.onclick=()=>{_view='side';renderBodySVG();setViewActive(sideBtn);};
+      setViewActive(_view==='back'?backBtn:_view==='side'?sideBtn:frontBtn);
     }
 
     /** Build a list of muscle groups with their available subgroups from the cache.
@@ -13199,13 +13352,13 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         const img2 = imgs[1] || '';
         const id = e.id;
         const isFav = _favorites.includes(id);
-        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : 'PG';
-        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
+        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
         // Auto-playing crossfade animation if 2 images, single image otherwise
         const imgHtml = img1 && img2
           ? `<div class="ex-anim-container" style="border-radius:0">
-              <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:cover" />
-              <img src="${esc(img2)}" alt="" class="ex-anim-frame-2" loading="lazy" style="object-fit:cover" />
+              <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:contain" />
+              <img src="${esc(img2)}" alt="" class="ex-anim-frame-2" loading="lazy" style="object-fit:contain" />
             </div>`
           : img1
           ? `<img src="${esc(img1)}" alt="" class="w-full h-full object-cover" loading="lazy"/>`
@@ -13241,12 +13394,12 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
             const img2 = imgs[1] || '';
             const id = e.id;
             const isFav = _favorites.includes(id);
-            const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : 'PG';
-            const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+            const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
+            const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
             const imgHtml = img1 && img2
               ? `<div class="ex-anim-container" style="border-radius:0">
-                  <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:cover" />
-                  <img src="${esc(img2)}" alt="" class="ex-anim-frame-2" loading="lazy" style="object-fit:cover" />
+                  <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:contain" />
+                  <img src="${esc(img2)}" alt="" class="ex-anim-frame-2" loading="lazy" style="object-fit:contain" />
                 </div>`
               : img1
               ? `<img src="${esc(img1)}" alt="" class="w-full h-full object-cover" loading="lazy"/>`
@@ -13318,8 +13471,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       grid.innerHTML = favExercises.map(e => {
         const name = e['name_' + lang] || e.name_en || '?';
         const img = (e.images && e.images[0]) || (e.i && e.i[0]) || '';
-        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : 'PG';
-        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
+        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
         return `<div class="bm-ex-card bg-surface-2 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition cursor-pointer" data-bm-add="${esc(e.id)}">
           <div class="aspect-square bg-surface relative">
             ${img ? `<img src="${esc(img)}" alt="" class="w-full h-full object-cover" loading="lazy"/>` : `<div class="w-full h-full grid place-items-center"><svg class="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
@@ -13354,8 +13507,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       grid.innerHTML = recentExercises.map(e => {
         const name = e['name_' + lang] || e.name_en || '?';
         const img = (e.images && e.images[0]) || (e.i && e.i[0]) || '';
-        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : 'PG';
-        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : 'bg-primary/15 text-primary-2';
+        const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
+        const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
         return `<div class="bm-ex-card bg-surface-2 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition cursor-pointer" data-bm-add="${esc(e.id)}">
           <div class="aspect-square bg-surface relative">
             ${img ? `<img src="${esc(img)}" alt="" class="w-full h-full object-cover" loading="lazy"/>` : `<div class="w-full h-full grid place-items-center"><svg class="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`}
