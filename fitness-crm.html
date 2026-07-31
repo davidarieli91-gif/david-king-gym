@@ -24037,5 +24037,417 @@ async function boot() {
     };
   })();
   </script>
+
+  <!-- ============================================================
+       ADVANCED UX: Pull-to-refresh, Swipe, Long-press,
+       Haptic, Auto-theme, Onboarding, Accessibility
+       ============================================================ -->
+  <script>
+  (function() {
+    'use strict';
+
+    // === 1. HAPTIC FEEDBACK ===
+    window.dkHaptic = function(ms) {
+      ms = ms || 10;
+      try { if (navigator.vibrate) navigator.vibrate(ms); } catch(e) {}
+    };
+
+    // Add haptic to all button clicks
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('button')) window.dkHaptic(8);
+    }, true);
+
+    // === 2. PULL-TO-REFRESH ===
+    (function() {
+      let touchStartY = 0;
+      let pullDistance = 0;
+      let isPulling = false;
+      const threshold = 70;
+      let pullEl = null;
+
+      function createPullEl() {
+        if (pullEl) return;
+        pullEl = document.createElement('div');
+        pullEl.style.cssText = 'position:fixed;top:0;left:0;right:0;height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(16,185,129,0.1);transition:height 0.2s ease;z-index:9998;pointer-events:none;';
+        pullEl.innerHTML = '<div style="font-size:20px;color:rgb(var(--c-primary));transition:transform 0.2s;">↓</div>';
+        document.body.appendChild(pullEl);
+      }
+
+      document.addEventListener('touchstart', function(e) {
+        // Only on scrollable areas, when scrolled to top
+        if (window.scrollY > 5) return;
+        const target = e.target.closest('[data-screen]') || document.body;
+        if (target.scrollTop > 5) return;
+        touchStartY = e.touches[0].clientY;
+        isPulling = true;
+        pullDistance = 0;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        if (!isPulling) return;
+        const y = e.touches[0].clientY;
+        pullDistance = Math.max(0, (y - touchStartY) * 0.5);
+        if (pullDistance > 0) {
+          createPullEl();
+          pullEl.style.height = pullDistance + 'px';
+          const arrow = pullEl.querySelector('div');
+          if (arrow) {
+            arrow.style.transform = pullDistance >= threshold ? 'rotate(180deg) scale(1.3)' : 'scale(1)';
+          }
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        if (!isPulling) return;
+        isPulling = false;
+        if (pullDistance >= threshold) {
+          window.dkHaptic(30);
+          // Trigger refresh
+          if (pullEl) {
+            pullEl.innerHTML = '<div class="dk-spinner" style="width:24px;height:24px;border-width:2px;"></div>';
+            pullEl.style.height = '40px';
+          }
+          // Reload current screen data
+          setTimeout(function() {
+            if (typeof screens !== 'undefined') {
+              if (screens.dashboard) screens.dashboard.load();
+              if (screens.exercises) screens.exercises.load();
+            }
+            if (pullEl) {
+              pullEl.style.height = '0';
+              setTimeout(function() { if (pullEl) pullEl.remove(); pullEl = null; }, 200);
+            }
+          }, 800);
+        } else {
+          if (pullEl) {
+            pullEl.style.height = '0';
+            setTimeout(function() { if (pullEl) pullEl.remove(); pullEl = null; }, 200);
+          }
+        }
+        pullDistance = 0;
+      }, { passive: true });
+    })();
+
+    // === 3. SWIPE GESTURES on cards ===
+    (function() {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let swipedEl = null;
+      let swipedType = null;
+
+      document.addEventListener('touchstart', function(e) {
+        const card = e.target.closest('[data-client-id], [data-program-id], [data-exercise-id]');
+        if (!card) return;
+        swipedEl = card;
+        swipedType = card.hasAttribute('data-client-id') ? 'client' :
+                     card.hasAttribute('data-program-id') ? 'program' : 'exercise';
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        if (!swipedEl) return;
+        const dx = e.touches[0].clientX - touchStartX;
+        const dy = e.touches[0].clientY - touchStartY;
+        // Only horizontal swipe
+        if (Math.abs(dx) < Math.abs(dy)) { swipedEl = null; return; }
+        if (Math.abs(dx) > 10) {
+          swipedEl.style.transform = 'translateX(' + Math.max(-80, Math.min(80, dx * 0.6)) + 'px)';
+          swipedEl.style.transition = 'none';
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        if (!swipedEl) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        swipedEl.style.transition = 'transform 0.3s ease';
+        swipedEl.style.transform = '';
+
+        if (Math.abs(dx) > 60) {
+          window.dkHaptic(20);
+          if (dx > 0) {
+            // Swipe right → open/edit
+            swipedEl.click();
+          } else {
+            // Swipe left → show quick actions
+            showSwipeActions(swipedEl, swipedType);
+          }
+        }
+        swipedEl = null;
+      }, { passive: true });
+
+      function showSwipeActions(el, type) {
+        // Remove existing
+        const existing = document.getElementById('dk-swipe-menu');
+        if (existing) existing.remove();
+
+        const id = el.getAttribute('data-client-id') || el.getAttribute('data-program-id') || el.getAttribute('data-exercise-id');
+        const menu = document.createElement('div');
+        menu.id = 'dk-swipe-menu';
+        menu.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgb(var(--c-surface));border-top:1px solid rgb(var(--c-border));border-radius:16px 16px 0 0;padding:16px;z-index:60;animation:dk-modal-enter 0.25s ease;';
+        menu.innerHTML = '<div style="display:flex;gap:8px;justify-content:center;">' +
+          '<button onclick="this.parentElement.parentElement.remove()" style="flex:1;padding:12px;border-radius:12px;background:rgb(var(--c-surface-2));border:1px solid rgb(var(--c-border));font-size:14px;cursor:pointer;">✕ Закрыть</button>' +
+          '<button onclick="if(typeof screens!==\'undefined\'&&screens.dashboard)screens.dashboard.deleteClient(\'' + id + '\');this.parentElement.parentElement.remove();" style="flex:1;padding:12px;border-radius:12px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:14px;cursor:pointer;">🗑 Удалить</button>' +
+          '</div>';
+        // Overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:59;';
+        overlay.onclick = function() { menu.remove(); overlay.remove(); };
+        document.body.appendChild(overlay);
+        document.body.appendChild(menu);
+      }
+    })();
+
+    // === 4. LONG-PRESS MENU ===
+    (function() {
+      let pressTimer = null;
+      let pressTarget = null;
+
+      document.addEventListener('touchstart', function(e) {
+        const card = e.target.closest('[data-client-id], [data-program-id]');
+        if (!card) return;
+        pressTarget = card;
+        pressTimer = setTimeout(function() {
+          if (pressTarget) {
+            window.dkHaptic(40);
+            // Trigger context menu
+            const id = pressTarget.getAttribute('data-client-id') || pressTarget.getAttribute('data-program-id');
+            const type = pressTarget.hasAttribute('data-client-id') ? 'client' : 'program';
+            showLongPressMenu(id, type, e.touches[0].clientX, e.touches[0].clientY);
+            pressTarget = null;
+          }
+        }, 600);
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e) {
+        clearTimeout(pressTimer);
+        pressTarget = null;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e) {
+        clearTimeout(pressTimer);
+        pressTarget = null;
+      }, { passive: true });
+
+      // Also for mouse (right-click)
+      document.addEventListener('contextmenu', function(e) {
+        const card = e.target.closest('[data-client-id], [data-program-id]');
+        if (card) {
+          e.preventDefault();
+          const id = card.getAttribute('data-client-id') || card.getAttribute('data-program-id');
+          const type = card.hasAttribute('data-client-id') ? 'client' : 'program';
+          showLongPressMenu(id, type, e.clientX, e.clientY);
+        }
+      });
+
+      function showLongPressMenu(id, type, x, y) {
+        const existing = document.getElementById('dk-longpress-menu');
+        if (existing) existing.remove();
+
+        const menu = document.createElement('div');
+        menu.id = 'dk-longpress-menu';
+        const left = Math.min(x, window.innerWidth - 200);
+        const top = Math.min(y, window.innerHeight - 200);
+        menu.style.cssText = 'position:fixed;left:' + left + 'px;top:' + top + 'px;background:rgb(var(--c-surface));border:1px solid rgb(var(--c-border));border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.2);padding:4px;z-index:60;min-width:180px;animation:dk-modal-enter 0.2s ease;';
+
+        const actions = type === 'client' ? [
+          { icon: '👁', label: 'Открыть', action: 'open' },
+          { icon: '✏️', label: 'Редактировать', action: 'edit' },
+          { icon: '📋', label: 'Программы', action: 'programs' },
+          { icon: '🗑', label: 'Удалить', action: 'delete', danger: true },
+        ] : [
+          { icon: '👁', label: 'Открыть', action: 'open' },
+          { icon: '✏️', label: 'Редактировать', action: 'edit' },
+          { icon: '🖨', label: 'Печать', action: 'print' },
+          { icon: '🗑', label: 'Удалить', action: 'delete', danger: true },
+        ];
+
+        menu.innerHTML = actions.map(function(a) {
+          return '<div data-action="' + a.action + '" data-id="' + id + '" data-type="' + type + '" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:14px;' + (a.danger ? 'color:#ef4444;' : '') + '" onmouseover="this.style.background=\'rgb(var(--c-surface-2))\'" onmouseout="this.style.background=\'transparent\'">' + a.icon + ' ' + a.label + '</div>';
+        }).join('');
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:59;';
+        overlay.onclick = function() { menu.remove(); overlay.remove(); };
+        document.body.appendChild(overlay);
+        document.body.appendChild(menu);
+      }
+    })();
+
+    // === 5. ONBOARDING TUTORIAL ===
+    (function() {
+      function shouldShowOnboarding() {
+        try { return !localStorage.getItem('dk_onboarding_done'); } catch(e) { return false; }
+      }
+
+      function showOnboarding() {
+        const slides = [
+          { icon: '👋', title: 'Добро пожаловать!', text: 'David King Gym — CRM для персональных тренеров. Управляйте клиентами, программами и питанием в одном месте.' },
+          { icon: '👥', title: 'Клиенты', text: 'Добавляйте клиентов, отслеживайте их прогресс, фото до/после, травмы и заметки.' },
+          { icon: '🏋️', title: 'Программы тренировок', text: 'Создавайте программы с автогенерацией, макетом мышц, и печатью на бланк Private Gym.' },
+          { icon: '🍽️', title: 'Планы питания', text: 'Составляйте планы питания с базой продуктов и подсчётом калорий.' },
+          { icon: '📱', title: 'Установка', text: 'Нажмите меню Chrome → «Установить приложение» для офлайн-доступа и быстрого запуска.' },
+        ];
+
+        let current = 0;
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:dk-overlay-enter 0.3s ease;';
+        overlay.id = 'dk-onboarding';
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background:rgb(var(--c-surface));border:1px solid rgb(var(--c-border));border-radius:24px;padding:32px;max-width:400px;width:100%;text-align:center;animation:dk-modal-enter 0.35s ease;';
+        overlay.appendChild(card);
+
+        function render() {
+          const s = slides[current];
+          const isLast = current === slides.length - 1;
+          card.innerHTML =
+            '<div style="font-size:56px;margin-bottom:16px;">' + s.icon + '</div>' +
+            '<h2 style="font-size:22px;font-weight:700;margin-bottom:12px;">' + s.title + '</h2>' +
+            '<p style="font-size:14px;color:rgb(var(--c-muted));line-height:1.6;margin-bottom:24px;">' + s.text + '</p>' +
+            '<div style="display:flex;gap:6px;justify-content:center;margin-bottom:20px;">' +
+              slides.map(function(_, i) { return '<div style="width:' + (i === current ? '24px' : '8px') + ';height:8px;border-radius:4px;background:' + (i === current ? 'rgb(var(--c-primary))' : 'rgb(var(--c-border))') + ';transition:all 0.3s ease;"></div>'; }).join('') +
+            '</div>' +
+            '<div style="display:flex;gap:8px;">' +
+              (current > 0 ? '<button id="dk-ob-prev" style="flex:1;padding:12px;border-radius:12px;background:rgb(var(--c-surface-2));border:1px solid rgb(var(--c-border));font-size:14px;cursor:pointer;">Назад</button>' : '') +
+              '<button id="dk-ob-next" style="flex:2;padding:12px;border-radius:12px;background:rgb(var(--c-primary));color:white;border:none;font-size:14px;font-weight:600;cursor:pointer;">' + (isLast ? 'Начать! 🚀' : 'Далее →') + '</button>' +
+            '</div>';
+
+          const nextBtn = document.getElementById('dk-ob-next');
+          if (nextBtn) nextBtn.onclick = function() {
+            window.dkHaptic(10);
+            if (isLast) {
+              try { localStorage.setItem('dk_onboarding_done', '1'); } catch(e) {}
+              overlay.remove();
+            } else {
+              current++;
+              render();
+            }
+          };
+          const prevBtn = document.getElementById('dk-ob-prev');
+          if (prevBtn) prevBtn.onclick = function() {
+            current--;
+            render();
+          };
+        }
+
+        document.body.appendChild(overlay);
+        render();
+      }
+
+      // Show onboarding on first visit
+      if (shouldShowOnboarding()) {
+        setTimeout(showOnboarding, 1500);
+      }
+
+      // Allow re-triggering from settings
+      window.dkShowOnboarding = function() {
+        try { localStorage.removeItem('dk_onboarding_done'); } catch(e) {}
+        showOnboarding();
+      };
+    })();
+
+    // === 6. AUTO THEME (prefers-color-scheme) ===
+    (function() {
+      function detectTheme() {
+        // Only auto-detect if user hasn't set a preference
+        try {
+          if (localStorage.getItem('dk_theme_manual')) return;
+        } catch(e) {}
+
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+
+        // If system preference differs from current, switch
+        if (prefersDark && currentTheme && !currentTheme.startsWith('dark')) {
+          // Find a dark theme
+          const darkThemes = ['midnight', 'slate', 'aurora-haze', 'jungle', 'aquarium', 'winter'];
+          if (window._setTheme) window._setTheme('midnight');
+        } else if (!prefersDark && currentTheme && currentTheme.startsWith('dark')) {
+          if (window._setTheme) window._setTheme('light');
+        }
+      }
+
+      // Listen for system theme changes
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', detectTheme);
+      }
+
+      // Detect on load (after app initializes)
+      setTimeout(detectTheme, 2000);
+
+      // Mark theme as manual when user changes it
+      if (window._setTheme) {
+        const orig = window._setTheme;
+        window._setTheme = function(theme) {
+          try { localStorage.setItem('dk_theme_manual', '1'); } catch(e) {}
+          return orig.apply(this, arguments);
+        };
+      }
+    })();
+
+    // === 7. ACCESSIBILITY (ARIA roles) ===
+    (function() {
+      function addAriaRoles() {
+        // Add roles to main elements
+        const roleMap = [
+          { selector: 'nav, [data-screen="dashboard"], [data-screen="clients"]', role: 'navigation' },
+          { selector: 'main, [data-screen]', role: 'main' },
+          { selector: 'button', role: 'button' },
+          { selector: 'input[type="search"], input[type="text"]', role: 'searchbox' },
+          { selector: '[id$="modal"]:not(.hidden)', role: 'dialog', attrs: { 'aria-modal': 'true' } },
+          { selector: 'table', role: 'table' },
+          { selector: 'h1', role: 'heading', attrs: { 'aria-level': '1' } },
+          { selector: 'h2', role: 'heading', attrs: { 'aria-level': '2' } },
+          { selector: 'h3', role: 'heading', attrs: { 'aria-level': '3' } },
+        ];
+
+        roleMap.forEach(function(item) {
+          document.querySelectorAll(item.selector).forEach(function(el) {
+            if (!el.getAttribute('role')) {
+              el.setAttribute('role', item.role);
+            }
+            if (item.attrs) {
+              Object.keys(item.attrs).forEach(function(k) {
+                if (!el.getAttribute(k)) el.setAttribute(k, item.attrs[k]);
+              });
+            }
+          });
+        });
+      }
+
+      // Run after app loads
+      setTimeout(addAriaRoles, 3000);
+      // Re-run periodically
+      setInterval(addAriaRoles, 5000);
+    })();
+
+    // === 8. KEYBOARD SHORTCUTS ===
+    (function() {
+      document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K → focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+          e.preventDefault();
+          const search = document.getElementById('exercise-search') || document.querySelector('input[type="search"]');
+          if (search) { search.focus(); search.select(); }
+        }
+        // Esc → close any open modal
+        if (e.key === 'Escape') {
+          document.querySelectorAll('.fixed.inset-0:not(.hidden)').forEach(function(m) {
+            if (m.id !== 'dk-onboarding') m.classList.add('hidden');
+          });
+        }
+        // Ctrl/Cmd + N → new client
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n' && e.shiftKey) {
+          e.preventDefault();
+          const addBtn = document.getElementById('add-client-btn') || document.querySelector('[data-action="add-client"]');
+          if (addBtn) addBtn.click();
+        }
+      });
+    })();
+
+  })();
+  </script>
 </body>
 </html>
