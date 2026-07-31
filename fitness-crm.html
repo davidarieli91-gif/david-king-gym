@@ -619,7 +619,7 @@
       background: rgba(255, 255, 255, 0.4);
       transform: scale(0);
       animation: dk-ripple-spread 0.6s ease-out;
-      pointer-events: none;
+      pointer-events: none !important;
     }
     @keyframes dk-ripple-spread {
       to { transform: scale(2.5); opacity: 0; }
@@ -24335,9 +24335,11 @@ async function boot() {
       }
 
       // Show onboarding on first visit (delayed, after app loads)
-      if (shouldShowOnboarding()) {
-        setTimeout(showOnboarding, 2500);
-      }
+      // DISABLED by default to prevent blocking — enable via Settings
+      // To enable: uncomment the next 3 lines
+      // if (shouldShowOnboarding()) {
+      //   setTimeout(showOnboarding, 2500);
+      // }
 
       // Allow re-triggering from settings
       window.dkShowOnboarding = function() {
