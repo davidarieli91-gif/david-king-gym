@@ -555,6 +555,28 @@
     .bm-class-chip.active { background: rgb(var(--c-accent)); color: #fff; border-color: rgb(var(--c-accent)); }
     /* Subtle row separator for classification chips */
     #bm-class-chips:not(:empty) { padding-top: 4px; border-top: 1px dashed rgb(var(--c-border)); }
+    /* Grouped grid: when bm-ex-grid has .bm-grouped class, it becomes a vertical stack of sections */
+    #bm-ex-grid.bm-grouped { display: flex; flex-direction: column; gap: 0.75rem; }
+    #bm-ex-grid.bm-grouped > .bm-section-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 0.5rem; }
+    @media (min-width: 640px) { #bm-ex-grid.bm-grouped > .bm-section-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { #bm-ex-grid.bm-grouped > .bm-section-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .bm-section-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: rgb(var(--c-text));
+      background: rgb(var(--c-surface-2));
+      border-inline-start: 3px solid rgb(var(--c-primary));
+      border-radius: 0.375rem;
+      position: sticky; top: 0; z-index: 5;
+    }
+    .bm-section-header.bm-section-isolation { border-inline-start-color: rgb(var(--c-accent)); }
+    .bm-section-header.bm-section-other { border-inline-start-color: rgb(var(--c-muted)); }
+    .bm-section-header .bm-section-count {
+      margin-inline-start: auto;
+      font-size: 10px; font-weight: 600; color: rgb(var(--c-muted));
+      background: rgb(var(--c-surface)); padding: 0.05rem 0.4rem; border-radius: 999px;
+    }
 
     /* Print styles */
     @media print {
@@ -2256,6 +2278,17 @@
                       <div id="bm-equip-chips" class="flex gap-1 mb-2 flex-wrap"></div>
                       <!-- Classification filter chips: force / level / mechanic / category -->
                       <div id="bm-class-chips" class="flex flex-col gap-1.5 mb-3"></div>
+                      <!-- View mode toolbar: grouping toggle + result count -->
+                      <div id="bm-view-toolbar" class="flex items-center justify-between gap-2 mb-2 px-1">
+                        <div class="flex items-center gap-1">
+                          <span class="text-[9px] font-bold uppercase text-muted">View:</span>
+                          <button id="bm-group-toggle" class="text-[10px] font-semibold px-2 py-1 rounded-lg border border-border bg-surface-2 hover:bg-border/30 transition inline-flex items-center gap-1" title="Toggle grouping">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M6 12h12M9 18h6"/></svg>
+                            <span id="bm-group-label">Mechanic</span>
+                          </button>
+                        </div>
+                        <span id="bm-result-count" class="text-[10px] text-muted font-mono"></span>
+                      </div>
                       <div id="bm-ex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
                     </div>
                   </div>
@@ -13137,6 +13170,10 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     //                  mechanic: 'compound'|'isolation'|null, category: 'strength'|'plyometrics'|...|null }
     let _classFilter = { force: null, level: null, mechanic: null, category: null };
 
+    // Grid grouping mode (added 2026-08): 'mechanic' = split into Compound/Isolation sections,
+    // 'none' = flat list. Default 'mechanic' because trainers want compound lifts at the top.
+    let _groupBy = 'mechanic';
+
     // Classification dimension metadata — order, labels (3-lang), emoji icon
     const CLASS_DIMENSIONS = [
       {
@@ -13448,6 +13485,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       _expandedGroups = new Set();
       _equipFilter = 'all';
       _classFilter = { force: null, level: null, mechanic: null, category: null };
+      _groupBy = 'mechanic';  // default: group by compound/isolation
       _view = 'front';
       _tab = 'body';
       loadFavorites();
@@ -13490,8 +13528,30 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           timer = setTimeout(() => { if (_tab === 'body') { renderClassChips(); renderExerciseGrid(); } }, 300);
         };
       }
+      // Wire grouping toggle (Mechanic ⇄ Flat)
+      const groupToggle = document.getElementById('bm-group-toggle');
+      if (groupToggle) {
+        groupToggle.onclick = () => {
+          _groupBy = (_groupBy === 'mechanic') ? 'none' : 'mechanic';
+          updateGroupToggleLabel();
+          renderExerciseGrid();
+        };
+      }
+      updateGroupToggleLabel();
       renderAll();
       setTimeout(() => { if (search) search.focus(); }, 100);
+    }
+
+    /** Update the grouping toggle button label based on current _groupBy state. */
+    function updateGroupToggleLabel() {
+      const labelEl = document.getElementById('bm-group-label');
+      if (!labelEl) return;
+      const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+      if (_groupBy === 'mechanic') {
+        labelEl.textContent = lang === 'ru' ? 'Базовое/Изоляция' : (lang === 'he' ? 'בסיסי/בידוד' : 'Compound/Isolation');
+      } else {
+        labelEl.textContent = lang === 'ru' ? 'Список' : (lang === 'he' ? 'רשימה' : 'Flat list');
+      }
     }
 
     function close() {
@@ -13923,21 +13983,24 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         });
       }
 
+      // Update result count in the toolbar
+      const countEl = document.getElementById('bm-result-count');
+      if (countEl) {
+        const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+        const lbl = lang === 'ru' ? 'упр.' : (lang === 'he' ? 'תרגילים' : 'exercises');
+        countEl.textContent = filtered.length + ' ' + lbl;
+      }
+
       if (filtered.length === 0) {
         const noExMsg = (typeof t === 'function' && t('exercise.noResults')) ? t('exercise.noResults') : 'No exercises found';
+        grid.classList.remove('bm-grouped');
         grid.innerHTML = `<div class="col-span-full text-center py-8 text-sm text-muted">${esc(noExMsg)}</div>`;
         return;
       }
 
-      // Performance: cap rendered cards at 200 (with a "show more" button).
-      // Rendering 1265 image cards at once makes the picker sluggish,
-      // especially on mobile.
-      const VISIBLE_CAP = 200;
-      const visible = filtered.length > VISIBLE_CAP ? filtered.slice(0, VISIBLE_CAP) : filtered;
-      const remaining = filtered.length - visible.length;
-
+      // Helper: render a single exercise card (extracted to avoid duplication)
       const lang = currentLang();
-      grid.innerHTML = visible.map(e => {
+      function renderExCard(e) {
         const name = e['name_' + lang] || e.name_en || '?';
         const imgs = e.images || e.i || [];
         const img1 = imgs[0] || '';
@@ -13946,7 +14009,6 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         const isFav = _favorites.includes(id);
         const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
         const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
-        // Auto-playing crossfade animation if 2 images, single image otherwise
         const imgHtml = img1 && img2
           ? `<div class="ex-anim-container" style="border-radius:0">
               <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:contain" />
@@ -13971,51 +14033,19 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
             </div>
           </div>
         </div>`;
-      }).join('');
-
-      // "Show more" button if we capped the results
-      if (remaining > 0) {
-        grid.innerHTML += `<button id="bm-show-more" class="col-span-full mt-2 py-2 text-xs font-semibold text-primary-2 hover:bg-primary/10 rounded-lg border border-primary/30 transition">${t('common.showMore') || 'Show more'} (+${remaining})</button>`;
-        const showMoreBtn = document.getElementById('bm-show-more');
-        if (showMoreBtn) showMoreBtn.addEventListener('click', () => {
-          // Render ALL filtered exercises by temporarily raising the cap
-          const allHtml = filtered.map(e => {
-            const name = e['name_' + lang] || e.name_en || '?';
-            const imgs = e.images || e.i || [];
-            const img1 = imgs[0] || '';
-            const img2 = imgs[1] || '';
-            const id = e.id;
-            const isFav = _favorites.includes(id);
-            const src = e.source === 'muscle_motion' || e.src === 'mm' ? 'MM' : (e.source === 'burnfit' || e.src === 'bf' ? 'BF' : 'PG');
-            const srcClass = src === 'MM' ? 'bg-accent/15 text-accent' : (src === 'BF' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary-2');
-            const imgHtml = img1 && img2
-              ? `<div class="ex-anim-container" style="border-radius:0">
-                  <img src="${esc(img1)}" alt="" class="ex-anim-frame-1" loading="lazy" style="object-fit:contain" />
-                  <img src="${esc(img2)}" alt="" class="ex-anim-frame-2" loading="lazy" style="object-fit:contain" />
-                </div>`
-              : img1
-              ? `<img src="${esc(img1)}" alt="" class="w-full h-full object-cover" loading="lazy"/>`
-              : `<div class="w-full h-full grid place-items-center"><svg class="w-8 h-8 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></div>`;
-            return `<div class="bm-ex-card bg-surface-2 border border-border rounded-xl overflow-hidden hover:border-primary/30 transition cursor-pointer" data-bm-add="${esc(id)}">
-              <div class="aspect-square bg-surface relative overflow-hidden">
-                ${imgHtml}
-                <button class="absolute top-1 end-1 w-6 h-6 grid place-items-center rounded-full bg-black/40 text-white z-10" data-bm-fav="${esc(id)}">
-                  <svg class="w-3.5 h-3.5 ${isFav ? 'text-yellow-400' : 'text-white/60'}" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                </button>
-              </div>
-              <div class="p-1.5">
-                <div class="text-[10px] font-medium truncate">${esc(name)}</div>
-                <div class="flex items-center justify-between mt-0.5">
-                  <span class="text-[8px] font-bold px-1 py-0.5 rounded ${srcClass}">${src}</span>
-                  <span class="text-primary-2 text-xs font-bold">+</span>
-                </div>
-              </div>
-            </div>`;
-          }).join('');
-          grid.innerHTML = allHtml;
-          wireGridClicks();
-        });
       }
+
+      // === Decide: grouped or flat rendering ===
+      // Group by mechanic only when:
+      //   1. _groupBy === 'mechanic'
+      //   2. mechanic filter is NOT active (otherwise user already filtered to one mechanic)
+      //   3. filtered set has at least 2 distinct mechanic values (otherwise grouping is meaningless)
+      const hasMechanicData = filtered.some(e => e.mechanic === 'compound' || e.mechanic === 'isolation');
+      const distinctMechanics = new Set(filtered.map(e => e.mechanic).filter(Boolean));
+      const shouldGroup = (_groupBy === 'mechanic') && !_classFilter.mechanic && hasMechanicData && distinctMechanics.size >= 2;
+
+      // Performance: cap rendered cards at 200 total (with a "show more" button)
+      const VISIBLE_CAP = 200;
 
       function wireGridClicks() {
         grid.querySelectorAll('[data-bm-add]').forEach(el => {
@@ -14026,13 +14056,13 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
             const ex = _cache.find(x => x.id === id);
             if (ex && _callback) { _callback(ex); close(); }
           });
+        });
         grid.querySelectorAll('[data-bm-view]').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const id = btn.getAttribute('data-bm-view');
             if (id && typeof openExerciseModal === 'function') openExerciseModal(id);
           });
-        });
         });
         grid.querySelectorAll('[data-bm-fav]').forEach(btn => {
           btn.addEventListener('click', (e) => {
@@ -14046,6 +14076,90 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
             saveFavorites();
             renderExerciseGrid();
           });
+        });
+      }
+
+      if (shouldGroup) {
+        // === Grouped rendering: split into Compound / Isolation / Other sections ===
+        const sections = [
+          { key: 'compound', label: lang === 'ru' ? 'Базовые' : (lang === 'he' ? 'בסיסי' : 'Compound'), icon: '⚙️', cls: 'bm-section-compound' },
+          { key: 'isolation', label: lang === 'ru' ? 'Изолирующие' : (lang === 'he' ? 'בידוד' : 'Isolation'), icon: '🎯', cls: 'bm-section-isolation' },
+          { key: 'other', label: lang === 'ru' ? 'Другое' : (lang === 'he' ? 'אחר' : 'Other'), icon: '📦', cls: 'bm-section-other' }
+        ];
+        // Sort exercises within each section alphabetically by current-language name
+        function sortByName(arr) {
+          return arr.slice().sort((a, b) => {
+            const na = (a['name_' + lang] || a.name_en || '').toLowerCase();
+            const nb = (b['name_' + lang] || b.name_en || '').toLowerCase();
+            return na.localeCompare(nb, lang || 'en');
+          });
+        }
+        // Bucket the filtered exercises by mechanic value
+        const buckets = { compound: [], isolation: [], other: [] };
+        filtered.forEach(e => {
+          const m = e.mechanic;
+          if (m === 'compound') buckets.compound.push(e);
+          else if (m === 'isolation') buckets.isolation.push(e);
+          else buckets.other.push(e);
+        });
+        // Apply per-section cap so one big section doesn't eat the whole 200 budget
+        // Allocate proportionally, with a floor of 50 per section if present.
+        const totalLen = filtered.length;
+        const sectionSizes = sections.map(s => buckets[s.key].length);
+        const presentSections = sections.filter(s => buckets[s.key].length > 0);
+        // Distribute the VISIBLE_CAP across present sections (proportional, min 30 each)
+        let capPerSection = {};
+        if (presentSections.length === 1) {
+          capPerSection[presentSections[0].key] = VISIBLE_CAP;
+        } else {
+          const totalPresent = presentSections.reduce((sum, s) => sum + buckets[s.key].length, 0);
+          presentSections.forEach(s => {
+            const proportional = Math.floor(VISIBLE_CAP * buckets[s.key].length / totalPresent);
+            capPerSection[s.key] = Math.max(30, Math.min(buckets[s.key].length, proportional));
+          });
+        }
+
+        grid.classList.add('bm-grouped');
+        let html = '';
+        let totalShown = 0;
+        let totalRemaining = 0;
+        sections.forEach(sec => {
+          const items = buckets[sec.key];
+          if (items.length === 0) return;
+          const sorted = sortByName(items);
+          const cap = capPerSection[sec.key] || sorted.length;
+          const visible = sorted.slice(0, cap);
+          const remaining = sorted.length - visible.length;
+          totalShown += visible.length;
+          totalRemaining += remaining;
+          html += `<div class="bm-section-header ${sec.cls}">
+            <span style="font-size:13px">${sec.icon}</span>
+            <span>${esc(sec.label)}</span>
+            <span class="bm-section-count">${sorted.length}</span>
+          </div>`;
+          html += `<div class="bm-section-grid">` + visible.map(renderExCard).join('') + `</div>`;
+          if (remaining > 0) {
+            html += `<div class="text-[10px] text-muted text-center py-1">+${remaining} ${lang === 'ru' ? 'ещё' : (lang === 'he' ? 'עוד' : 'more')} — ${lang === 'ru' ? 'уточните фильтр' : (lang === 'he' ? 'סנן' : 'refine filter')}</div>`;
+          }
+        });
+        grid.innerHTML = html;
+        wireGridClicks();
+        return;
+      }
+
+      // === Flat rendering (current behaviour) ===
+      grid.classList.remove('bm-grouped');
+      const visible = filtered.length > VISIBLE_CAP ? filtered.slice(0, VISIBLE_CAP) : filtered;
+      const remaining = filtered.length - visible.length;
+      grid.innerHTML = visible.map(renderExCard).join('');
+
+      // "Show more" button if we capped the results
+      if (remaining > 0) {
+        grid.innerHTML += `<button id="bm-show-more" class="col-span-full mt-2 py-2 text-xs font-semibold text-primary-2 hover:bg-primary/10 rounded-lg border border-primary/30 transition">${t('common.showMore') || 'Show more'} (+${remaining})</button>`;
+        const showMoreBtn = document.getElementById('bm-show-more');
+        if (showMoreBtn) showMoreBtn.addEventListener('click', () => {
+          grid.innerHTML = filtered.map(renderExCard).join('');
+          wireGridClicks();
         });
       }
       wireGridClicks();
