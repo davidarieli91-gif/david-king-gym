@@ -577,6 +577,21 @@
       font-size: 10px; font-weight: 600; color: rgb(var(--c-muted));
       background: rgb(var(--c-surface)); padding: 0.05rem 0.4rem; border-radius: 999px;
     }
+    /* Drag-and-drop for program builder exercise cards */
+    .pb-draggable { transition: opacity .12s, transform .12s, border-color .12s; }
+    .pb-drag-handle { cursor: grab; }
+    .pb-drag-handle:active { cursor: grabbing; }
+    .pb-draggable.pb-dragging { opacity: 0.4; transform: scale(0.98); }
+    .pb-draggable.pb-drag-over-top {
+      border-color: rgb(var(--c-primary)) !important;
+      box-shadow: 0 -3px 0 0 rgb(var(--c-primary)), 0 0 0 1px rgb(var(--c-primary));
+    }
+    .pb-draggable.pb-drag-over-bottom {
+      border-color: rgb(var(--c-primary)) !important;
+      box-shadow: 0 3px 0 0 rgb(var(--c-primary)), 0 0 0 1px rgb(var(--c-primary));
+    }
+    .pb-grip:hover svg { transform: scale(1.1); }
+    .pb-grip svg { transition: transform .12s; }
 
     /* Print styles */
     @media print {
@@ -7894,8 +7909,11 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               </button>
             </div>`;
           });
-          return `<div class="bg-surface-2 border border-border rounded-xl p-3">
-            <div class="flex items-center gap-2 mb-2">
+          return `<div class="bg-surface-2 border border-border rounded-xl p-3 pb-draggable" data-pb-ex-index="${ei}">
+            <div class="flex items-center gap-2 mb-2 pb-drag-handle" draggable="true" data-pb-drag-handle="${ei}">
+              <div class="pb-grip text-muted/60 hover:text-muted transition cursor-grab active:cursor-grabbing shrink-0" title="${t('programs.dragToReorder') || 'Drag to reorder'}">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+              </div>
               <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary-2 grid place-items-center font-mono font-bold text-xs shrink-0">${ei + 1}</div>
               ${ex.is_superset ? '<span class="text-xs text-accent font-bold shrink-0" title="Superset">⚡</span>' : ''}
               <div class="flex-1 min-w-0 cursor-pointer" data-pb-view-ex="${escapeAttr(ex.exercise_id || '')}">
@@ -8032,6 +8050,82 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               toast(t('programs.supersetOff') || 'Superset OFF', 'info', 2000);
             }
             renderBuilder();
+          });
+        });
+
+        // === Drag-and-drop reordering (Tier 2 #3) ===
+        // Only one exercise can be dragged at a time. On drop, the exercise moves
+        // to the target index; the rest shift accordingly.
+        let dragFromIdx = null;
+        contentEl.querySelectorAll('[data-pb-drag-handle]').forEach(handle => {
+          handle.addEventListener('dragstart', (e) => {
+            dragFromIdx = parseInt(handle.getAttribute('data-pb-drag-handle'), 10);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(dragFromIdx));
+            // Visually mark the dragged card
+            const card = handle.closest('.pb-draggable');
+            if (card) {
+              card.style.opacity = '0.4';
+              card.classList.add('pb-dragging');
+            }
+          });
+          handle.addEventListener('dragend', () => {
+            // Cleanup visual state on all cards
+            contentEl.querySelectorAll('.pb-draggable').forEach(c => {
+              c.style.opacity = '';
+              c.classList.remove('pb-dragging', 'pb-drag-over-top', 'pb-drag-over-bottom');
+            });
+            dragFromIdx = null;
+          });
+        });
+        // Drop targets: each exercise card
+        contentEl.querySelectorAll('.pb-draggable').forEach(card => {
+          card.addEventListener('dragover', (e) => {
+            if (dragFromIdx === null) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            // Determine if cursor is in the top or bottom half of the card
+            const rect = card.getBoundingClientRect();
+            const isTop = (e.clientY - rect.top) < rect.height / 2;
+            card.classList.remove('pb-drag-over-top', 'pb-drag-over-bottom');
+            card.classList.add(isTop ? 'pb-drag-over-top' : 'pb-drag-over-bottom');
+          });
+          card.addEventListener('dragleave', () => {
+            card.classList.remove('pb-drag-over-top', 'pb-drag-over-bottom');
+          });
+          card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const toIdx = parseInt(card.getAttribute('data-pb-ex-index'), 10);
+            if (dragFromIdx !== null && !isNaN(toIdx) && dragFromIdx !== toIdx) {
+              // Determine insert position based on cursor position relative to card midpoint
+              const rect = card.getBoundingClientRect();
+              const isTop = (e.clientY - rect.top) < rect.height / 2;
+              // If dropping into the bottom half of a card below the source, the target
+              // index stays as toIdx. If dropping into the top half, insert before toIdx.
+              // splice-based move in pbMoveExercise inserts at the exact toIdx, so we
+              // adjust: if cursor is in the bottom half and target is below source, the
+              // effective index after splice-removal is toIdx - 1.
+              let finalIdx = toIdx;
+              if (!isTop && toIdx > dragFromIdx) finalIdx = toIdx;       // already correct
+              else if (isTop && toIdx > dragFromIdx) finalIdx = toIdx - 1; // insert before, after removal shifts down
+              else if (!isTop && toIdx < dragFromIdx) finalIdx = toIdx + 1; // insert after
+              else finalIdx = toIdx;                                       // isTop && toIdx < dragFromIdx
+              // Clamp
+              finalIdx = Math.max(0, Math.min(day.exercises.length - 1, finalIdx));
+              if (finalIdx !== dragFromIdx) {
+                // For "insert after" cases, pbMoveExercise's splice(toIdx, 0, moved) places
+                // the moved item at index toIdx — but we want toIdx+1. So we pass finalIdx
+                // and let pbMoveExercise do splice(fromIdx, 1) then splice(finalIdx_after_removal, 0, ...).
+                // Adjust finalIdx to account for the removal: if finalIdx > dragFromIdx, decrement.
+                let adjustedTarget = finalIdx;
+                if (adjustedTarget > dragFromIdx) adjustedTarget -= 0;  // pass as-is, splice-then-insert handles it
+                pbMoveExercise(dragFromIdx, finalIdx);
+                toast((t('programs.exerciseMoved') || 'Exercise moved'), 'success', 1500);
+              }
+            }
+            card.classList.remove('pb-drag-over-top', 'pb-drag-over-bottom');
+            dragFromIdx = null;
           });
         });
       }
@@ -8396,6 +8490,29 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       }[strategy] || strategy;
       toast((t('programs.autoArrangedToast') || 'Arranged: {strategy}') + ' · ' + moves + ' ' + (t('programs.exercisesMoved') || 'moved'), 'success', 2400);
       return moves;
+    }
+
+    /** === MOVE EXERCISE — drag-and-drop reorder (Tier 2 #3) ===
+     *  Moves the exercise at `fromIdx` to `toIdx` in the active day.
+     *  Uses splice to remove then insert at the new position (handles both
+     *  forward and backward moves correctly).
+     *  Preserves all set data and clears stale superset flags (same as pbAutoArrange). */
+    function pbMoveExercise(fromIdx, toIdx) {
+      const day = _pb.days[_pb.activeDay];
+      if (!day || !day.exercises) return false;
+      const n = day.exercises.length;
+      if (fromIdx < 0 || fromIdx >= n || toIdx < 0 || toIdx >= n || fromIdx === toIdx) return false;
+      const [moved] = day.exercises.splice(fromIdx, 1);
+      day.exercises.splice(toIdx, 0, moved);
+      // Clear stale superset flags — superset_partner indices are now invalid
+      day.exercises.forEach(ex => {
+        if (ex.is_superset || ex.superset_partner !== undefined) {
+          ex.is_superset = false;
+          delete ex.superset_partner;
+        }
+      });
+      renderBuilder();
+      return true;
     }
 
     async function pbSave() {
@@ -9656,7 +9773,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
     return { load, render, closeViewer, get clientId() { return _clientId; }, get _client() { return _client; },
              openProgramCreator, openProgramEditor, createProgram, archiveProgram, deleteProgram, duplicateProgram, loadPrograms, startWorkoutFromProgram, openProgramDayPreview, printProgram,
-             pbOpenExercisePicker, pbSave, rebuildDays, renderBuilder, autoGenerateProgram, llmGenerateProgram, pbMakeEasier, pbMakeHarder, pbAutoArrange,
+             pbOpenExercisePicker, pbSave, rebuildDays, renderBuilder, autoGenerateProgram, llmGenerateProgram, pbMakeEasier, pbMakeHarder, pbAutoArrange, pbMoveExercise,
              printProgram, printNutritionPlan, printOnForm, printPrivateGym, PG_LAYOUT, pgTargetRow, pgGetLayout, pgEsc, loadPrintSettings, savePrintSettings, FORM_DEFAULTS,
              get _pb() { return _pb; } };
   })();
