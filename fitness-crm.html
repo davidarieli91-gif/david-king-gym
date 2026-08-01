@@ -15899,7 +15899,7 @@ Select foods for each meal. Output as JSON only.`;
      FOOD DATABASE SEED — injects the food database into IndexedDB on boot.
      ===================================================================== */
   async function seedFoodDatabase(force = false) {
-    const flagKey = 'seeded_food_db_v50';
+    const flagKey = 'seeded_food_db_v51';
     const flag = await db.get('settings', flagKey);
     if (!flag) force = true;
     const current = await db.count('food_database');
