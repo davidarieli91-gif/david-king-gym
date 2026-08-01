@@ -550,6 +550,11 @@
     @media (max-width: 640px) { #exercise-gif-slot { max-height: 50vh; } }
     .bm-chip { transition: all .12s; }
     .bm-chip.active { background: rgb(var(--c-primary)); color: #fff; border-color: rgb(var(--c-primary)); }
+    .bm-class-chip { transition: all .12s; border-color: rgb(var(--c-border)); }
+    .bm-class-chip:hover { background: rgb(var(--c-surface-2)); }
+    .bm-class-chip.active { background: rgb(var(--c-accent)); color: #fff; border-color: rgb(var(--c-accent)); }
+    /* Subtle row separator for classification chips */
+    #bm-class-chips:not(:empty) { padding-top: 4px; border-top: 1px dashed rgb(var(--c-border)); }
 
     /* Print styles */
     @media print {
@@ -2190,7 +2195,9 @@
                     </div>
                     <!-- Right: Exercise cards -->
                     <div class="flex-1 overflow-y-auto p-3">
-                      <div id="bm-equip-chips" class="flex gap-1 mb-3 flex-wrap"></div>
+                      <div id="bm-equip-chips" class="flex gap-1 mb-2 flex-wrap"></div>
+                      <!-- Classification filter chips: force / level / mechanic / category -->
+                      <div id="bm-class-chips" class="flex flex-col gap-1.5 mb-3"></div>
                       <div id="bm-ex-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"></div>
                     </div>
                   </div>
@@ -4284,6 +4291,15 @@
           gif_url: (e.i && e.i.length > 0) ? e.i[0] : '',
           synergist_muscles: e.synergists || [],
           movement_type: e.mt || 'isolation',
+          // Classification dimensions (added 2026-08 — used by body map picker filters)
+          //   force: 'push' | 'pull' | 'static' | null  (844/873 MM have it; PG/BF = null)
+          //   level: 'beginner' | 'intermediate' | 'expert' | null  (873/873 MM; PG/BF = null)
+          //   mechanic: 'compound' | 'isolation' | null  (derived from movement_type)
+          //   category: 'strength' | 'plyometrics' | 'stretching' | 'powerlifting' | 'olympic weightlifting' | 'strongman' | 'cardio' | null
+          force: e.f || null,
+          level: e.lv || null,
+          mechanic: (e.mt === 'compound' || e.mt === 'isolation') ? e.mt : null,
+          category: e.cat || null,
           created_at: Date.now(), updated_at: Date.now()
         };
       });
@@ -4808,15 +4824,16 @@
       if (typeof _exerciseDbLoaded !== 'undefined' && !_exerciseDbLoaded) {
         await loadExerciseDbExternal();
       }
-    // Check if v5 seed flag is set — if not, force re-seed.
-    // v5 = anatomical subgroup split (biceps/brachialis/brachioradialis, etc.)
+    // Check if v17 seed flag is set — if not, force re-seed.
+    // v17 = added force/level/mechanic/category classification fields (2026-08)
+    // v16 = anatomical subgroup split (biceps/brachialis/brachioradialis, etc.)
     //      + PG "General" subgroups removed + technique fields added
     // v4 = new folder_path structure (no "General" subgroup, no equipment level)
     // v3 = original 1265-exercise seed
-    const v5Flag = await db.get('settings', 'seeded_exercise_base_v16');
+    const v5Flag = await db.get('settings', 'seeded_exercise_base_v17');
     if (!v5Flag) {
       force = true;
-      console.info('[seed] v5 flag missing — forcing re-seed of exercise_base (anatomical subgroups)');
+      console.info('[seed] v17 flag missing — forcing re-seed of exercise_base (classification fields)');
     }
     const current = await db.count('exercise_base');
     if (current > 0 && !force) {
@@ -4830,7 +4847,7 @@
       return 0;
     }
     await db.bulkPut('exercise_base', exercises);
-    await db.put('settings', { key: 'seeded_exercise_base_v16', value: true });
+    await db.put('settings', { key: 'seeded_exercise_base_v17', value: true });
     console.info(`[seed] injected ${exercises.length} exercises into exercise_base`);
     return exercises.length;
   }
@@ -12944,6 +12961,58 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     let _favorites = [];
     let _recent = [];
 
+    // Classification filters (added 2026-08) — null = no filter, otherwise string value
+    // _classFilter = { force: 'push'|'pull'|'static'|null, level: 'beginner'|'intermediate'|'expert'|null,
+    //                  mechanic: 'compound'|'isolation'|null, category: 'strength'|'plyometrics'|...|null }
+    let _classFilter = { force: null, level: null, mechanic: null, category: null };
+
+    // Classification dimension metadata — order, labels (3-lang), emoji icon
+    const CLASS_DIMENSIONS = [
+      {
+        key: 'mechanic',
+        icon: '⚙️',
+        label: { en: 'Mechanic', ru: 'Механика', he: 'מכניקה' },
+        values: [
+          { v: 'compound', label: { en: 'Compound', ru: 'Базовое', he: 'בסיסי' } },
+          { v: 'isolation', label: { en: 'Isolation', ru: 'Изолирующее', he: 'בידוד' } }
+        ]
+      },
+      {
+        key: 'force',
+        icon: '↔️',
+        label: { en: 'Force', ru: 'Усилие', he: 'כוח' },
+        values: [
+          { v: 'push', label: { en: 'Push', ru: 'Жим', he: 'דחיפה' } },
+          { v: 'pull', label: { en: 'Pull', ru: 'Тяга', he: 'משיכה' } },
+          { v: 'static', label: { en: 'Static', ru: 'Статика', he: 'סטטי' } }
+        ]
+      },
+      {
+        key: 'level',
+        icon: '📊',
+        label: { en: 'Level', ru: 'Уровень', he: 'רמה' },
+        values: [
+          { v: 'beginner', label: { en: 'Beginner', ru: 'Начальный', he: 'מתחיל' } },
+          { v: 'intermediate', label: { en: 'Intermediate', ru: 'Средний', he: 'בינוני' } },
+          { v: 'expert', label: { en: 'Expert', ru: 'Эксперт', he: 'מתקדם' } }
+        ]
+      },
+      {
+        key: 'category',
+        icon: '🏷️',
+        label: { en: 'Category', ru: 'Категория', he: 'קטגוריה' },
+        values: [
+          { v: 'strength', label: { en: 'Strength', ru: 'Сила', he: 'כוח' } },
+          { v: 'plyometrics', label: { en: 'Plyometrics', ru: 'Плиометрика', he: 'פליומטריה' } },
+          { v: 'stretching', label: { en: 'Stretching', ru: 'Растяжка', he: 'מתיחות' } },
+          { v: 'powerlifting', label: { en: 'Powerlifting', ru: 'Пауэрлифтинг', he: 'פאוארליפטינג' } },
+          { v: 'olympic weightlifting', label: { en: 'Olympic', ru: 'Олимпийское', he: 'אולימפי' } },
+          { v: 'strongman', label: { en: 'Strongman', ru: 'Стронгмен', he: 'סטרונגמן' } },
+          { v: 'cardio', label: { en: 'Cardio', ru: 'Кардио', he: 'קרדיו' } }
+        ]
+      }
+    ];
+
     // Muscle group colors (matching exercise tree)
     const GROUP_COLORS = {
       legs: '#f97316', chest: '#ef4444', back: '#3b82f6', shoulders: '#f59e0b',
@@ -13207,6 +13276,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       _activeSubgroup = null;
       _expandedGroups = new Set();
       _equipFilter = 'all';
+      _classFilter = { force: null, level: null, mechanic: null, category: null };
       _view = 'front';
       _tab = 'body';
       loadFavorites();
@@ -13246,7 +13316,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         let timer;
         search.oninput = () => {
           clearTimeout(timer);
-          timer = setTimeout(() => { if (_tab === 'body') renderExerciseGrid(); }, 300);
+          timer = setTimeout(() => { if (_tab === 'body') { renderClassChips(); renderExerciseGrid(); } }, 300);
         };
       }
       renderAll();
@@ -13296,6 +13366,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         renderBodySVG();
         renderGroupTree();
         renderEquipChips();
+        renderClassChips();
         renderExerciseGrid();
       } else if (_tab === 'favorites') {
         showFavView();
@@ -13356,7 +13427,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               _activeGroup = group; _activeSubgroup = subgroup || null;
               _expandedGroups.add(group);
             }
-            renderBodySVG(); renderGroupTree(); renderEquipChips(); renderExerciseGrid();
+            renderBodySVG(); renderGroupTree(); renderEquipChips(); renderClassChips(); renderExerciseGrid();
           });
           if (subgroup) el.setAttribute('title', subgroup + ' (' + group + ')');
           else el.setAttribute('title', group);
@@ -13492,6 +13563,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           renderBodySVG();
           renderGroupTree();
           renderEquipChips();
+          renderClassChips();
           renderExerciseGrid();
         });
       });
@@ -13511,6 +13583,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           renderBodySVG();
           renderGroupTree();
           renderEquipChips();
+          renderClassChips();
           renderExerciseGrid();
         });
       });
@@ -13565,6 +13638,80 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         btn.addEventListener('click', () => {
           _equipFilter = btn.getAttribute('data-equip');
           renderEquipChips();
+          renderClassChips();
+          renderExerciseGrid();
+        });
+      });
+    }
+
+    /** Render classification filter chips (force / level / mechanic / category).
+     *  Each dimension is a row with a label + horizontal chip list.
+     *  Only renders rows for dimensions that have at least 1 exercise in the
+     *  current filtered set (so empty dimensions don't clutter the UI). */
+    function renderClassChips() {
+      const container = document.getElementById('bm-class-chips');
+      if (!container) return;
+      // Compute the filtered set once (group + subgroup + equipment + source — NOT class filter itself, to avoid feedback loop)
+      let baseFiltered = _cache;
+      if (_sourceFilter) {
+        baseFiltered = baseFiltered.filter(e =>
+          (e.source || e.src) === _sourceFilter ||
+          (e.src === 'pg' && _sourceFilter === 'private_gym') ||
+          (e.src === 'mm' && _sourceFilter === 'muscle_motion')
+        );
+      }
+      if (_activeGroup) {
+        baseFiltered = baseFiltered.filter(e => (e.group_canonical || e.g) === _activeGroup);
+      }
+      if (_activeSubgroup) {
+        baseFiltered = baseFiltered.filter(e => (e.subgroup_en || e.sE || '') === _activeSubgroup);
+      }
+      if (_equipFilter !== 'all') {
+        baseFiltered = baseFiltered.filter(e => (e.equipment_type || e.e) === _equipFilter);
+      }
+
+      const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+      let html = '';
+      CLASS_DIMENSIONS.forEach(dim => {
+        // Count exercises per value for this dimension
+        const counts = {};
+        dim.values.forEach(v => { counts[v.v] = 0; });
+        baseFiltered.forEach(e => {
+          const val = e[dim.key];
+          if (val && counts.hasOwnProperty(val)) counts[val]++;
+        });
+        // Hide the dimension entirely if no exercise in the current filter has any value for it
+        const totalWith = Object.values(counts).reduce((s, n) => s + n, 0);
+        if (totalWith === 0) return;
+
+        const dimLabel = dim.label[lang] || dim.label.en;
+        html += `<div class="flex items-center gap-1 flex-wrap">
+          <span class="text-[9px] font-bold uppercase text-muted shrink-0" style="min-width:60px">${dim.icon} ${esc(dimLabel)}</span>
+          <button class="bm-class-chip text-[10px] font-semibold px-2 py-0.5 rounded-full border ${_classFilter[dim.key] === null ? 'active' : 'bg-surface-2 text-muted border-border'}" data-class-key="${dim.key}" data-class-val="">${esc(t('common.all') || 'All')}</button>`;
+        dim.values.forEach(v => {
+          const cnt = counts[v.v];
+          if (cnt === 0) return; // hide values with 0 matches
+          const isActive = _classFilter[dim.key] === v.v;
+          const lbl = v.label[lang] || v.label.en;
+          html += `<button class="bm-class-chip text-[10px] font-semibold px-2 py-0.5 rounded-full border ${isActive ? 'active' : 'bg-surface-2 text-muted border-border'}" data-class-key="${dim.key}" data-class-val="${esc(v.v)}">${esc(lbl)}<span class="opacity-50 ms-1">${cnt}</span></button>`;
+        });
+        html += `</div>`;
+      });
+      // If no dimensions have any data, render nothing (don't show empty space)
+      if (html === '') {
+        container.innerHTML = '';
+        container.style.display = 'none';
+      } else {
+        container.innerHTML = html;
+        container.style.display = '';
+      }
+      // Wire chip clicks
+      container.querySelectorAll('[data-class-key]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const k = btn.getAttribute('data-class-key');
+          const v = btn.getAttribute('data-class-val');
+          _classFilter[k] = v ? v : null;
+          renderClassChips();
           renderExerciseGrid();
         });
       });
@@ -13587,6 +13734,12 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       if (_equipFilter !== 'all') {
         filtered = filtered.filter(e => (e.equipment_type || e.e) === _equipFilter);
       }
+      // Classification filters (force / level / mechanic / category)
+      ['force', 'level', 'mechanic', 'category'].forEach(k => {
+        if (_classFilter[k]) {
+          filtered = filtered.filter(e => e[k] === _classFilter[k]);
+        }
+      });
       // Search filter
       const search = document.getElementById('bm-search');
       const q = search ? search.value.toLowerCase().trim() : '';
