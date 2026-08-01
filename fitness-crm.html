@@ -560,78 +560,60 @@
     }
 
     /* ====================================================================
-       MODERN UI ANIMATIONS & EFFECTS
+       MODERN UI — PURE CSS ANIMATIONS (zero JavaScript)
+       All animations trigger automatically via CSS selectors.
+       No event listeners, no DOM traversal, no reflow loops.
        ==================================================================== */
 
-    /* --- 1. Page transitions (fade-in + slide-up) --- */
+    /* --- 1. Smooth scroll --- */
+    html { scroll-behavior: smooth; }
+
+    /* --- 2. Page transitions (automatic fade-in on visible screens) --- */
     @keyframes dk-page-enter {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .dk-page-anim {
-      animation: dk-page-enter 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+    [data-screen]:not(.hidden) {
+      animation: dk-page-enter 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
 
-    /* --- 2. Card hover lift --- */
-    .dk-lift {
+    /* --- 3. Card hover lift (automatic on card-like elements) --- */
+    .bg-surface.border.border-border.rounded-2xl.shadow-card,
+    .bg-surface-2.border.border-border.rounded-xl,
+    .bm-ex-card {
       transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
                   box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
-    .dk-lift:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
-    }
-    .dk-lift:active {
-      transform: translateY(-1px) scale(0.99);
+    .bg-surface.border.border-border.rounded-2xl.shadow-card:hover,
+    .bg-surface-2.border.border-border.rounded-xl:hover,
+    .bm-ex-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
     }
 
-    /* --- 3. Modal scale + fade animations --- */
+    /* --- 4. Modal scale-in (automatic when .hidden is removed) --- */
     @keyframes dk-modal-enter {
-      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      from { opacity: 0; transform: scale(0.94) translateY(8px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
-    @keyframes dk-modal-exit {
-      from { opacity: 1; transform: scale(1) translateY(0); }
-      to   { opacity: 0; transform: scale(0.92) translateY(10px); }
-    }
-    .dk-modal-anim {
-      animation: dk-modal-enter 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
-    }
-    .dk-modal-exit-anim {
-      animation: dk-modal-exit 0.2s ease-in forwards;
-    }
-    @keyframes dk-overlay-enter {
+    @keyframes dk-overlay-fade {
       from { opacity: 0; }
       to   { opacity: 1; }
     }
-    .dk-overlay-anim {
-      animation: dk-overlay-enter 0.2s ease;
+    /* Trigger animation when modal becomes visible */
+    .fixed.inset-0:not(.hidden) {
+      animation: dk-overlay-fade 0.2s ease;
+    }
+    .fixed.inset-0:not(.hidden) > div:first-child {
+      animation: dk-modal-enter 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
 
-    /* --- 4. Ripple effect --- */
-    .dk-ripple-container {
-      position: relative;
-      overflow: hidden;
+    /* --- 5. Button press (universal, CSS-only) --- */
+    button {
+      transition: transform 0.08s ease, background-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .dk-ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.4);
-      transform: scale(0);
-      animation: dk-ripple-spread 0.6s ease-out;
-      pointer-events: none !important;
-    }
-    @keyframes dk-ripple-spread {
-      to { transform: scale(2.5); opacity: 0; }
-    }
-
-    /* --- 5. Stagger list animations --- */
-    @keyframes dk-stagger-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .dk-stagger-item {
-      animation: dk-stagger-in 0.3s ease-out backwards;
+    button:active {
+      transform: scale(0.96);
     }
 
     /* --- 6. Gradient text --- */
@@ -642,68 +624,28 @@
       -webkit-text-fill-color: transparent;
     }
 
-    /* --- 7. Skeleton shimmer --- */
-    @keyframes dk-shimmer {
-      0%   { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
-    }
-    .dk-skeleton {
-      background: linear-gradient(
-        90deg,
-        rgb(var(--c-surface-2)) 25%,
-        rgb(var(--c-border)) 50%,
-        rgb(var(--c-surface-2)) 75%
-      );
-      background-size: 200% 100%;
-      animation: dk-shimmer 1.5s infinite;
-      border-radius: 8px;
-    }
-
-    /* --- 8. Animated counter --- */
-    .dk-counter {
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* --- 9. Toast redesign --- */
+    /* --- 7. Toast slide-in (automatic) --- */
     @keyframes dk-toast-in {
       from { opacity: 0; transform: translateY(20px) scale(0.95); }
       to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    @keyframes dk-toast-out {
-      from { opacity: 1; transform: translateX(0); }
-      to   { opacity: 0; transform: translateX(100%); }
     }
     #toast-container > div {
       animation: dk-toast-in 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
 
-    /* --- 10. Offline indicator --- */
-    .dk-offline-banner {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(90deg, #ef4444, #f59e0b);
-      color: white;
-      text-align: center;
-      padding: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      z-index: 9999;
-      transform: translateY(-100%);
-      transition: transform 0.3s ease;
+    /* --- 8. Skeleton shimmer --- */
+    @keyframes dk-shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
     }
-    .dk-offline-banner.visible {
-      transform: translateY(0);
+    .dk-skeleton {
+      background: linear-gradient(90deg, rgb(var(--c-surface-2)) 25%, rgb(var(--c-border)) 50%, rgb(var(--c-surface-2)) 75%);
+      background-size: 200% 100%;
+      animation: dk-shimmer 1.5s infinite;
+      border-radius: 8px;
     }
 
-    /* --- 11. Button press effect (CSS only) --- */
-    button:active:not([data-no-press]) {
-      transform: scale(0.97);
-      transition: transform 0.08s ease;
-    }
-
-    /* --- 12. Screen spinner (for exercise-db loading) --- */
+    /* --- 9. Spinner --- */
     @keyframes dk-spin {
       to { transform: rotate(360deg); }
     }
@@ -714,6 +656,58 @@
       border-top-color: rgb(var(--c-primary));
       border-radius: 50%;
       animation: dk-spin 0.8s linear infinite;
+    }
+
+    /* --- 10. Focus glow --- */
+    *:focus-visible {
+      outline: 2px solid rgb(var(--c-primary));
+      outline-offset: 2px;
+    }
+
+    /* --- 11. Custom scrollbar --- */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgb(var(--c-border));
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgb(var(--c-muted));
+    }
+
+    /* --- 12. Stagger animation (CSS nth-child, no JS) --- */
+    @keyframes dk-stagger-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #exercise-tree > div:nth-child(-n+20) {
+      animation: dk-stagger-in 0.25s ease-out backwards;
+    }
+    #exercise-tree > div:nth-child(1) { animation-delay: 0ms; }
+    #exercise-tree > div:nth-child(2) { animation-delay: 30ms; }
+    #exercise-tree > div:nth-child(3) { animation-delay: 60ms; }
+    #exercise-tree > div:nth-child(4) { animation-delay: 90ms; }
+    #exercise-tree > div:nth-child(5) { animation-delay: 120ms; }
+    #exercise-tree > div:nth-child(6) { animation-delay: 150ms; }
+    #exercise-tree > div:nth-child(7) { animation-delay: 180ms; }
+    #exercise-tree > div:nth-child(8) { animation-delay: 210ms; }
+
+    /* --- 13. Link/nav transitions --- */
+    a, .nav-pill, [data-screen] {
+      transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+
+    /* --- 14. Input focus animation --- */
+    input, select, textarea {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, select:focus, textarea:focus {
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
     }
 
     /* YouTube mini-player in exercise card */
