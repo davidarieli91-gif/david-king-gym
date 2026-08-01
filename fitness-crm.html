@@ -2074,6 +2074,10 @@
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
                   <span data-i18n="programs.harder">${t('programs.harder') || 'Harder'}</span>
                 </button>
+                <button id="pb-auto-arrange" class="flex-1 min-w-[90px] bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 text-xs font-semibold px-2 py-2 rounded-xl transition inline-flex items-center justify-center gap-1.5" title="${t('programs.autoArrangeHint') || 'Reorder exercises automatically'}">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M6 12h12M9 18h6"/></svg>
+                  <span data-i18n="programs.autoArrange">${t('programs.autoArrange') || 'Auto-arrange'}</span>
+                </button>
                 <button id="pb-share" class="flex-1 min-w-[70px] bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 text-xs font-semibold px-2 py-2 rounded-xl transition inline-flex items-center justify-center gap-1.5" title="${t('programs.shareHint') || 'Share as image via WhatsApp'}">
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
                   <span data-i18n="programs.share">${t('programs.share') || 'Share'}</span>
@@ -2097,6 +2101,60 @@
                 <button id="pb-save" class="flex-1 min-w-[120px] bg-primary hover:bg-primary-2 text-white text-sm font-semibold py-2 rounded-xl transition shadow-card" data-i18n="programs.saveProgram">
                   Save program
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============= AUTO-ARRANGE MODAL (Tier 1 #2 — exercise reordering strategies) ============= -->
+          <div id="auto-arrange-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-surface w-full sm:max-w-md max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
+              <!-- Header -->
+              <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-display font-bold text-base" data-i18n="programs.autoArrangeTitle">Auto-arrange day</h3>
+                  <p class="text-xs text-muted" data-i18n="programs.autoArrangeSubtitle">Pick a strategy to reorder exercises in this day</p>
+                </div>
+                <button id="auto-arrange-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <!-- Strategy options -->
+              <div class="flex-1 overflow-y-auto p-3 space-y-2">
+                <!-- Strategy 1: Compound → Isolation -->
+                <button class="auto-arrange-strategy w-full text-start p-3 bg-surface-2 hover:bg-border/40 border border-border rounded-xl transition" data-strategy="compound_first">
+                  <div class="flex items-center gap-3 mb-1">
+                    <span class="text-2xl shrink-0">⚙️</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold" data-i18n="programs.strategyCompoundFirst">Compound → Isolation</div>
+                      <div class="text-[10px] text-muted" data-i18n="programs.strategyCompoundFirstDesc">Multi-joint first (squat, bench, deadlift), then single-joint (curls, extensions)</div>
+                    </div>
+                    <svg class="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </button>
+                <!-- Strategy 2: Push → Pull → Legs -->
+                <button class="auto-arrange-strategy w-full text-start p-3 bg-surface-2 hover:bg-border/40 border border-border rounded-xl transition" data-strategy="push_pull_legs">
+                  <div class="flex items-center gap-3 mb-1">
+                    <span class="text-2xl shrink-0">↔️</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold" data-i18n="programs.strategyPushPullLegs">Push → Pull → Legs</div>
+                      <div class="text-[10px] text-muted" data-i18n="programs.strategyPushPullLegsDesc">Chest/shoulders/triceps first, then back/biceps, then legs/core last</div>
+                    </div>
+                    <svg class="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </button>
+                <!-- Strategy 3: Large → Small muscle -->
+                <button class="auto-arrange-strategy w-full text-start p-3 bg-surface-2 hover:bg-border/40 border border-border rounded-xl transition" data-strategy="large_to_small">
+                  <div class="flex items-center gap-3 mb-1">
+                    <span class="text-2xl shrink-0">📏</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold" data-i18n="programs.strategyLargeSmall">Large → Small muscle</div>
+                      <div class="text-[10px] text-muted" data-i18n="programs.strategyLargeSmallDesc">Legs/back/chest first, then shoulders/arms, then forearms/calves/core last</div>
+                    </div>
+                    <svg class="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </button>
+                <!-- Hint -->
+                <div class="text-[10px] text-muted text-center pt-2" data-i18n="programs.autoArrangeHint">Reordering preserves sets, reps, and weights. Supersets may break.</div>
               </div>
             </div>
           </div>
@@ -8156,6 +8214,119 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       toast(t('programs.madeHarder') || 'Workout adjusted: harder', 'success', 2200);
     }
 
+    /** === AUTO-ARRANGE — Tier 1 #2 (2026-08) ===
+     *  Reorder exercises in the active day using one of three strategies.
+     *  No competitor in the fitness-app category offers this feature.
+     *
+     *  Strategies:
+     *  1. 'compound_first' — compound (multi-joint) before isolation (single-joint),
+     *     ties broken by exercise name alphabetical.
+     *  2. 'push_pull_legs' — group by force type + muscle:
+     *     push (chest/shoulders/triceps) → pull (back/biceps) → legs → core/other.
+     *     Within each block, compound before isolation.
+     *  3. 'large_to_small' — large muscle groups first (legs/back/chest),
+     *     medium (shoulders/arms), small (forearms/calves/core/other).
+     *     Within each block, compound before isolation.
+     *
+     *  Preserves: sets, reps, weights, RPE, superset flags (superset_partner may break).
+     *  Returns the number of exercises that moved.
+     */
+    function pbAutoArrange(strategy) {
+      const day = _pb.days[_pb.activeDay];
+      if (!day || !day.exercises || day.exercises.length < 2) {
+        toast(t('programs.needTwoExercises') || 'Need at least 2 exercises to arrange', 'warning', 2000);
+        return 0;
+      }
+      // Build a score for each exercise. Lower score = earlier in the workout.
+      // Score is a tuple [block, mechanicRank, nameAsc] — compared lexicographically.
+      // Cache lookups to avoid O(n²) lookups in the sort comparator.
+      const lang = currentLang();
+      const cached = day.exercises.map(ex => {
+        const full = (_pb.exerciseCache || []).find(e => e.id === ex.exercise_id) || {};
+        const group = (full.group_canonical || full.g || '').toLowerCase();
+        const force = full.force || null;          // 'push' | 'pull' | 'static' | null
+        const mechanic = full.mechanic || (full.mt === 'compound' ? 'compound' : 'isolation');
+        const name = ex.name || full['name_' + lang] || full.name_en || '';
+        return { ex, group, force, mechanic, name: name.toLowerCase() };
+      });
+
+      // === Strategy-specific block / mechanic ranks ===
+      let blockRank, mechanicRank;
+      if (strategy === 'compound_first') {
+        // Single block (everything in 0); sort by mechanic then name.
+        blockRank = () => 0;
+        mechanicRank = m => (m === 'compound' ? 0 : 1);
+      } else if (strategy === 'push_pull_legs') {
+        // Block 0 = push (chest/shoulders/triceps), 1 = pull (back/elbow_flexors/forearms),
+        // 2 = legs, 3 = core (abdominals), 4 = other (stretching/warmup/calisthenics).
+        blockRank = (group, force) => {
+          if (group === 'chest' || group === 'shoulders' || group === 'triceps') return 0;
+          if (group === 'back' || group === 'elbow_flexors' || group === 'forearms') return 1;
+          if (group === 'legs') return 2;
+          if (group === 'abdominals') return 3;
+          return 4;
+        };
+        mechanicRank = m => (m === 'compound' ? 0 : 1);
+      } else if (strategy === 'large_to_small') {
+        // Block 0 = large (legs/back/chest), 1 = medium (shoulders/elbow_flexors/triceps),
+        // 2 = small (forearms/abdominals/stretching/warmup/calisthenics/other).
+        blockRank = (group) => {
+          if (group === 'legs' || group === 'back' || group === 'chest') return 0;
+          if (group === 'shoulders' || group === 'elbow_flexors' || group === 'triceps') return 1;
+          return 2;
+        };
+        mechanicRank = m => (m === 'compound' ? 0 : 1);
+      } else {
+        console.warn('[pbAutoArrange] unknown strategy:', strategy);
+        return 0;
+      }
+
+      // Compute the score array for each exercise
+      const scored = cached.map(c => ({
+        ex: c.ex,
+        score: [blockRank(c.group, c.force), mechanicRank(c.mechanic), c.name]
+      }));
+
+      // Capture original order to count moves
+      const originalIds = scored.map(s => s.ex.exercise_id || s.ex.name).join('|');
+
+      // Stable sort by score (lexicographic on [block, mechanic, name])
+      scored.sort((a, b) => {
+        const sA = a.score, sB = b.score;
+        if (sA[0] !== sB[0]) return sA[0] - sB[0];
+        if (sA[1] !== sB[1]) return sA[1] - sB[1];
+        return sA[2].localeCompare(sB[2]);
+      });
+
+      // Count moves (positions where the exercise changed)
+      let moves = 0;
+      scored.forEach((s, i) => {
+        if ((s.ex.exercise_id || s.ex.name) !== day.exercises[i].exercise_id && (s.ex.exercise_id || s.ex.name) !== day.exercises[i].name) {
+          moves++;
+        }
+      });
+
+      // Apply the new order
+      day.exercises = scored.map(s => s.ex);
+
+      // Clear stale superset flags (a reordered exercise's `superset_partner` index is now wrong)
+      day.exercises.forEach(ex => {
+        if (ex.is_superset || ex.superset_partner !== undefined) {
+          ex.is_superset = false;
+          delete ex.superset_partner;
+        }
+      });
+
+      renderBuilder();
+      const strategyLabel = {
+        compound_first: t('programs.strategyCompoundFirst') || 'Compound → Isolation',
+        push_pull_legs: t('programs.strategyPushPullLegs') || 'Push → Pull → Legs',
+        large_to_small: t('programs.strategyLargeSmall') || 'Large → Small muscle'
+      }[strategy] || strategy;
+      toast((t('programs.autoArrangedToast') || 'Arranged: {strategy}') + ' · ' + moves + ' ' + (t('programs.exercisesMoved') || 'moved'), 'success', 2400);
+      return moves;
+    }
+
     async function pbSave() {
       const name = document.getElementById('pb-name').value.trim();
       if (!name) { toast(t('programs.nameRequired'), 'warning'); return; }
@@ -9414,7 +9585,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
     return { load, render, closeViewer, get clientId() { return _clientId; }, get _client() { return _client; },
              openProgramCreator, openProgramEditor, createProgram, archiveProgram, deleteProgram, duplicateProgram, loadPrograms, startWorkoutFromProgram, openProgramDayPreview, printProgram,
-             pbOpenExercisePicker, pbSave, rebuildDays, renderBuilder, autoGenerateProgram, llmGenerateProgram, pbMakeEasier, pbMakeHarder,
+             pbOpenExercisePicker, pbSave, rebuildDays, renderBuilder, autoGenerateProgram, llmGenerateProgram, pbMakeEasier, pbMakeHarder, pbAutoArrange,
              printProgram, printNutritionPlan, printOnForm, printPrivateGym, PG_LAYOUT, pgTargetRow, pgGetLayout, pgEsc, loadPrintSettings, savePrintSettings, FORM_DEFAULTS,
              get _pb() { return _pb; } };
   })();
@@ -19200,6 +19371,38 @@ async function boot() {
     const pbHarder = document.getElementById('pb-harder');
     if (pbHarder) pbHarder.addEventListener('click', () => {
       if (screens.profile && screens.profile.pbMakeHarder) screens.profile.pbMakeHarder();
+    });
+    // Auto-arrange: open the strategy picker modal
+    const pbAutoArrange = document.getElementById('pb-auto-arrange');
+    if (pbAutoArrange) pbAutoArrange.addEventListener('click', () => {
+      const day = screens.profile && screens.profile._pb && screens.profile._pb.days[0];
+      const dayIdx = screens.profile && screens.profile._pb ? screens.profile._pb.activeDay : 0;
+      const activeDay = screens.profile && screens.profile._pb && screens.profile._pb.days[dayIdx];
+      if (!activeDay || !activeDay.exercises || activeDay.exercises.length < 2) {
+        toast(t('programs.needTwoExercises') || 'Need at least 2 exercises to arrange', 'warning', 2200);
+        return;
+      }
+      const modal = document.getElementById('auto-arrange-modal');
+      if (modal) modal.classList.remove('hidden');
+    });
+    // Auto-arrange modal close (X button + backdrop click)
+    const aaClose = document.getElementById('auto-arrange-close');
+    if (aaClose) aaClose.addEventListener('click', () => {
+      document.getElementById('auto-arrange-modal').classList.add('hidden');
+    });
+    const aaModal = document.getElementById('auto-arrange-modal');
+    if (aaModal) aaModal.addEventListener('click', (e) => {
+      if (e.target === aaModal) aaModal.classList.add('hidden');
+    });
+    // Wire each strategy button
+    document.querySelectorAll('.auto-arrange-strategy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const strategy = btn.getAttribute('data-strategy');
+        if (strategy && screens.profile && screens.profile.pbAutoArrange) {
+          screens.profile.pbAutoArrange(strategy);
+        }
+        document.getElementById('auto-arrange-modal').classList.add('hidden');
+      });
     });
     const pbShare = document.getElementById('pb-share');
     if (pbShare) pbShare.addEventListener('click', async () => {
