@@ -6354,15 +6354,35 @@
       var tabs = ['vitamins','minerals','amino'];
       tabs.forEach(function(t) {
         var btn = document.getElementById('micro-tab-' + t);
-        var list = t === 'amino' ? document.getElementById('micro-amino-list') : document.getElementById('micro-list');
         if (t === tab) {
           if (btn) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
-          if (list) list.classList.remove('hidden');
         } else {
           if (btn) { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
-          if (list) list.classList.add('hidden');
         }
       });
+      // Show/hide lists
+      var microList = document.getElementById('micro-list');
+      var aminoList = document.getElementById('micro-amino-list');
+      if (tab === 'amino') {
+        if (microList) microList.classList.add('hidden');
+        if (aminoList) aminoList.classList.remove('hidden');
+      } else {
+        if (microList) microList.classList.remove('hidden');
+        if (aminoList) aminoList.classList.add('hidden');
+        // Filter micro-list by group
+        var groupMap = { vitamins: 'vitamin', minerals: 'mineral' };
+        var targetGroup = groupMap[tab];
+        if (microList) {
+          var groups = microList.querySelectorAll('[data-micro-group]');
+          groups.forEach(function(el) {
+            if (el.getAttribute('data-micro-group') === targetGroup || (tab === 'vitamins' && el.getAttribute('data-micro-group') === 'other')) {
+              el.style.display = '';
+            } else {
+              el.style.display = 'none';
+            }
+          });
+        }
+      }
     }
     
     // Wire tab buttons
@@ -16991,26 +17011,23 @@ Select foods for each meal. Output as JSON only.`;
         `;
       }
 
-      // Render nutrient list grouped by vitamin/mineral/other, sorted by % RDI ascending within each group
-      const groups = ['vitamin', 'mineral', 'other'];
+      // Render nutrient lists — vitamins and minerals in SEPARATE lists
       const groupLabels = {
         vitamin: t('nutrition.microVitamins') || 'Vitamins',
         mineral: t('nutrition.microMinerals') || 'Minerals',
         other: t('nutrition.microOther') || 'Other'
       };
-      let html = '';
-      groups.forEach(g => {
+
+      function renderNutrientGroup(g) {
         const keys = Object.keys(MICRONUTRIENT_RDI).filter(k => MICRONUTRIENT_RDI[k].group === g);
-        // Sort: lowest coverage first (most deficient)
         keys.sort((a, b) => result.coverage[a] - result.coverage[b]);
-        if (keys.length === 0) return;
-        html += `<div class="text-[10px] uppercase tracking-wider text-muted mt-2 mb-1">${esc(groupLabels[g])}</div>`;
+        if (keys.length === 0) return '<div class="text-xs text-muted text-center py-4">No data</div>';
+        let html = '';
         keys.forEach(k => {
           const meta = MICRONUTRIENT_RDI[k];
           const val = result.totals[k] || 0;
           const pct = result.coverage[k];
           const isLimit = meta.isLimit;
-          // Color band
           let color, bg, barColor;
           if (isLimit) {
             if (pct > 100) { color = 'text-danger'; bg = 'bg-danger/10'; barColor = 'bg-danger'; }
@@ -17043,9 +17060,19 @@ Select foods for each meal. Output as JSON only.`;
             </div>
           </div>`;
         });
+        return html;
+      }
+
+      // Render vitamins into micro-list, minerals into a new minerals container
+      // We use micro-list for BOTH but filter by tab
+      // Actually: render ALL into micro-list but tag each with data-group
+      let fullHtml = '';
+      ['vitamin', 'mineral', 'other'].forEach(g => {
+        const groupHtml = renderNutrientGroup(g);
+        fullHtml += '<div data-micro-group="' + g + '" class="space-y-2">' + groupHtml + '</div>';
       });
       const listEl = document.getElementById('micro-list');
-      if (listEl) listEl.innerHTML = html;
+      if (listEl) listEl.innerHTML = fullHtml;
     }
 
     /** Show suggestions for the top-3 most deficient nutrients.
