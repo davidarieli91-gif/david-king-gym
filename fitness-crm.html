@@ -592,6 +592,17 @@
     }
     .pb-grip:hover svg { transform: scale(1.1); }
     .pb-grip svg { transition: transform .12s; }
+    /* Recovery map: muscle fill override + rec-muscle bars */
+    #rec-svg-container .bm-muscle { transition: fill .25s; cursor: default; }
+    #rec-svg-container .bm-muscle:hover { filter: brightness(1.2); }
+    .rec-muscle-row { padding: 6px 8px; border-radius: 8px; border: 1px solid rgb(var(--c-border)); background: rgb(var(--c-surface-2)); transition: all .15s; }
+    .rec-muscle-row:hover { border-color: rgb(var(--c-primary) / 0.4); }
+    .rec-muscle-row.rec-status-fresh { border-inline-start: 3px solid rgb(var(--c-success)); }
+    .rec-muscle-row.rec-status-recovering { border-inline-start: 3px solid rgb(var(--c-warning)); }
+    .rec-muscle-row.rec-status-fatigued { border-inline-start: 3px solid rgb(var(--c-danger)); }
+    .rec-muscle-row.rec-status-untrained { border-inline-start: 3px solid rgb(var(--c-muted) / 0.5); opacity: 0.6; }
+    .rec-bar { height: 6px; border-radius: 3px; overflow: hidden; background: rgb(var(--c-surface)); }
+    .rec-bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
 
     /* Print styles */
     @media print {
@@ -2138,6 +2149,50 @@
                 <button id="pb-save" class="flex-1 min-w-[120px] bg-primary hover:bg-primary-2 text-white text-sm font-semibold py-2 rounded-xl transition shadow-card" data-i18n="programs.saveProgram">
                   Save program
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============= RECOVERY MAP MODAL (Tier 3 #1 — Fitbod-style recovery heat-map) ============= -->
+          <div id="recovery-map-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div class="bg-surface w-full sm:max-w-3xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
+              <!-- Header -->
+              <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-display font-bold text-base" data-i18n="recovery.title">Recovery Map</h3>
+                  <p id="recovery-subtitle" class="text-xs text-muted truncate"></p>
+                </div>
+                <!-- Mode tabs: Recovery | Volume(7d) | Volume(30d) -->
+                <div class="flex gap-1 bg-surface-2 border border-border rounded-lg p-0.5 shrink-0">
+                  <button id="rec-mode-recovery" class="px-3 py-1.5 rounded-md text-xs font-semibold transition bg-primary text-white" data-i18n="recovery.modeRecovery">Recovery</button>
+                  <button id="rec-mode-7d" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="recovery.mode7d">7d Vol</button>
+                  <button id="rec-mode-30d" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="recovery.mode30d">30d Vol</button>
+                </div>
+                <button id="recovery-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <!-- Body: SVG + muscle breakdown -->
+              <div class="flex-1 overflow-y-auto p-3 flex flex-col md:flex-row gap-3">
+                <!-- Left: SVG body (front/back/side tabs) -->
+                <div class="shrink-0 flex flex-col items-center">
+                  <div class="flex gap-1 mb-2">
+                    <button id="rec-view-front" class="px-2 py-1 rounded text-[10px] font-semibold transition bg-primary text-white">Front</button>
+                    <button id="rec-view-back" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted">Back</button>
+                    <button id="rec-view-side" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted">Side</button>
+                  </div>
+                  <div id="rec-svg-container" class="w-[160px] sm:w-[200px]"></div>
+                  <!-- Legend -->
+                  <div id="rec-legend" class="mt-2 text-[10px] text-muted text-center"></div>
+                </div>
+                <!-- Right: muscle list with bars -->
+                <div class="flex-1 min-w-0">
+                  <div id="rec-muscle-list" class="space-y-1.5"></div>
+                </div>
+              </div>
+              <!-- Footer hint -->
+              <div class="p-2 border-t border-border text-[10px] text-muted text-center shrink-0" data-i18n="recovery.hint">
+                Recovery model: ~6-day exponential decay. Synergist muscles receive 30% fatigue credit. Volume = sets × reps × weight for done sets only.
               </div>
             </div>
           </div>
@@ -6858,6 +6913,10 @@
           <button id="profile-workout-history" class="ms-auto bg-surface-2 hover:bg-border/40 border border-border text-xs font-semibold px-3 py-2 rounded-lg transition inline-flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span>${t('workouts.history')}</span>
+          </button>
+          <button id="profile-recovery-map" class="bg-accent/15 hover:bg-accent/25 text-accent border border-accent/30 text-xs font-semibold px-3 py-2 rounded-lg transition inline-flex items-center gap-1.5" title="${t('recovery.title') || 'Recovery Map'}">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>${t('recovery.title') || 'Recovery'}</span>
           </button>
         </div>
 
@@ -14399,6 +14458,481 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
   })();
 
   /* =====================================================================
+     RECOVERY MAP — Fitbod-style muscle recovery heat-map (Tier 3 #1)
+     --------------------------------------------------------------------
+     Shows per-muscle recovery % (6-day exponential decay) and weekly /
+     monthly training volume. Synergist muscles receive 30% fatigue credit.
+     All values are computed on-the-fly from workout_history — no schema
+     migration needed.
+
+     Public API:
+       • recoveryMap.open(clientId) — opens the modal
+       • recoveryMap.close()       — closes the modal
+       • recoveryMap.computeForClient(clientId) — returns { chest: {recovery, volume7d, volume30d, lastTrained}, ... }
+     ===================================================================== */
+  const recoveryMap = (function () {
+    // === Config ===
+    const RECOVERY_TAU_DAYS = 3.0;    // exponential decay time constant; ~6 days for full recovery
+    const SYNERGIST_CREDIT = 0.30;    // 30% of primary volume flows to each synergist muscle
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+    // All canonical muscle groups (matches GROUP_I18N keys)
+    const ALL_GROUPS = ['chest', 'back', 'shoulders', 'elbow_flexors', 'triceps', 'forearms',
+                        'abdominals', 'legs', 'stretching', 'warmup', 'calisthenics'];
+
+    // 3-language labels (matches GROUP_I18N but localized to recovery context)
+    const GROUP_LABELS = {
+      chest:          { en: 'Chest',       ru: 'Грудь',       he: 'חזה' },
+      back:           { en: 'Back',        ru: 'Спина',       he: 'גב' },
+      shoulders:      { en: 'Shoulders',   ru: 'Плечи',       he: 'כתפיים' },
+      elbow_flexors:  { en: 'Biceps',      ru: 'Бицепс',      he: 'ביצפס' },
+      triceps:        { en: 'Triceps',     ru: 'Трицепс',     he: 'תלת ראשי' },
+      forearms:       { en: 'Forearms',    ru: 'Предплечья',  he: 'אמות' },
+      abdominals:     { en: 'Abs',         ru: 'Пресс',       he: 'בטן' },
+      legs:           { en: 'Legs',        ru: 'Ноги',        he: 'רגליים' },
+      stretching:     { en: 'Stretching',  ru: 'Растяжка',    he: 'מתיחות' },
+      warmup:         { en: 'Warm-up',     ru: 'Разминка',    he: 'חימום' },
+      calisthenics:   { en: 'Calisthenics',ru: 'Калистеника', he: 'משקל גוף' }
+    };
+
+    // === Module state ===
+    let _clientId = null;
+    let _mode = 'recovery';  // 'recovery' | '7d' | '30d'
+    let _view = 'front';     // 'front' | 'back' | 'side'
+    let _data = null;        // cached result of computeForClient
+
+    /** Look up an exercise in exercise_base by ID to get its canonical group + synergists. */
+    async function lookupExercise(exerciseId) {
+      if (!exerciseId) return null;
+      try {
+        const ex = await db.get('exercise_base', exerciseId);
+        return ex || null;
+      } catch (e) { return null; }
+    }
+
+    /** Convert a localized group name to canonical using GROUP_I18N reverse map. */
+    function canonicalGroup(localizedName) {
+      if (!localizedName) return null;
+      // Try direct match against ALL_GROUPS (in case it's already canonical)
+      if (ALL_GROUPS.indexOf(localizedName) !== -1) return localizedName;
+      // Try reverse lookup against GROUP_I18N
+      for (var i = 0; i < ALL_GROUPS.length; i++) {
+        var g = ALL_GROUPS[i];
+        var meta = (typeof GROUP_I18N !== 'undefined') ? GROUP_I18N[g] : null;
+        if (!meta) continue;
+        if (meta.en === localizedName || meta.ru === localizedName || meta.he === localizedName) return g;
+      }
+      return null;
+    }
+
+    /** Compute recovery % from days-since-trained using exponential decay.
+     *  recovery = 100 * (1 - exp(-days / TAU))
+     *  days=0   → recovery=0    (just trained, fully fatigued)
+     *  days=3   → recovery=63%  (one TAU)
+     *  days=6   → recovery=86%  (two TAUs)
+     *  days=10  → recovery=96%  (effectively recovered) */
+    function recoveryPct(daysSince) {
+      if (daysSince == null || !isFinite(daysSince)) return 100;
+      if (daysSince < 0) daysSince = 0;
+      return Math.round(100 * (1 - Math.exp(-daysSince / RECOVERY_TAU_DAYS)));
+    }
+
+    /** Status bucket for color coding. */
+    function statusBucket(recovery, lastTrainedDaysAgo) {
+      if (lastTrainedDaysAgo == null || !isFinite(lastTrainedDaysAgo)) return 'untrained';
+      if (recovery >= 85) return 'fresh';
+      if (recovery >= 50) return 'recovering';
+      return 'fatigued';
+    }
+
+    /** Compute per-muscle recovery + volume for a client.
+     *  Walks workout_history, accumulates volume per (muscle, day), then
+     *  applies decay + finds most-recent training day for recovery %.
+     *  Returns { chest: {recovery, lastTrainedDaysAgo, lastTrainedMs, volume7d, volume30d, sets7d}, ... } */
+    async function computeForClient(clientId) {
+      if (!clientId) return null;
+      // Load all workouts for this client
+      const workouts = await db.find('workout_history', 'by_clientId', clientId);
+      if (!workouts || workouts.length === 0) {
+        // Return empty state for all muscles
+        const empty = {};
+        ALL_GROUPS.forEach(g => {
+          empty[g] = { recovery: 100, lastTrainedDaysAgo: null, lastTrainedMs: null,
+                       volume7d: 0, volume30d: 0, sets7d: 0, sets30d: 0, status: 'untrained' };
+        });
+        return empty;
+      }
+
+      // Build exercise_id → { group, synergists } cache (one lookup per unique exercise_id)
+      const exCache = {};
+      const exerciseIds = new Set();
+      workouts.forEach(w => (w.exercises || []).forEach(ex => {
+        if (ex.exercise_id) exerciseIds.add(ex.exercise_id);
+      }));
+      const ids = Array.from(exerciseIds);
+      await Promise.all(ids.map(async id => {
+        const ex = await lookupExercise(id);
+        if (ex) {
+          exCache[id] = {
+            group: ex.group_canonical || canonicalGroup(ex.group_en) || ex.group_en,
+            synergists: (ex.synergist_muscles || []).map(s => canonicalGroup(s) || s).filter(Boolean)
+          };
+        }
+      }));
+
+      // Accumulate volume per (muscle, day-bucket)
+      // day bucket = floor(date / MS_PER_DAY) — so all workouts on the same calendar day merge
+      const now = Date.now();
+      const dayBucketNow = Math.floor(now / MS_PER_DAY);
+      // muscleVolumeByDay[muscle][dayBucket] = total volume that day (sum across all workouts + exercises)
+      const muscleVolumeByDay = {};
+      const muscleSetsByDay = {};
+      ALL_GROUPS.forEach(g => { muscleVolumeByDay[g] = {}; muscleSetsByDay[g] = {}; });
+
+      workouts.forEach(w => {
+        if (!w.exercises) return;
+        const dayBucket = Math.floor((w.date || 0) / MS_PER_DAY);
+        w.exercises.forEach(ex => {
+          // Determine canonical muscle group
+          let group = null;
+          let synergists = [];
+          if (ex.exercise_id && exCache[ex.exercise_id]) {
+            group = exCache[ex.exercise_id].group;
+            synergists = exCache[ex.exercise_id].synergists;
+          }
+          if (!group) group = canonicalGroup(ex.muscle_group) || canonicalGroup(ex.group) || ex.group;
+          if (!group || ALL_GROUPS.indexOf(group) === -1) return;
+
+          // Compute volume for this exercise = sum(set.weight * set.reps) for done sets only
+          // (program-builder sets don't have .done flag; live-workout sets do. Treat null/undefined as done.)
+          let exVolume = 0;
+          let exSets = 0;
+          (ex.sets || []).forEach(s => {
+            // Skip explicitly-undone sets (live workout marks done=false)
+            if (s.done === false) return;
+            const w_v = parseFloat(s.weight) || 0;
+            const r_v = typeof s.reps === 'number' ? s.reps : (parseInt(s.reps, 10) || 0);
+            exVolume += w_v * r_v;
+            exSets++;
+          });
+
+          // Credit primary muscle 100%
+          if (!muscleVolumeByDay[group][dayBucket]) muscleVolumeByDay[group][dayBucket] = 0;
+          muscleVolumeByDay[group][dayBucket] += exVolume;
+          if (!muscleSetsByDay[group][dayBucket]) muscleSetsByDay[group][dayBucket] = 0;
+          muscleSetsByDay[group][dayBucket] += exSets;
+
+          // Credit each synergist 30%
+          synergists.forEach(syn => {
+            if (ALL_GROUPS.indexOf(syn) === -1) return;
+            if (!muscleVolumeByDay[syn][dayBucket]) muscleVolumeByDay[syn][dayBucket] = 0;
+            muscleVolumeByDay[syn][dayBucket] += exVolume * SYNERGIST_CREDIT;
+            if (!muscleSetsByDay[syn][dayBucket]) muscleSetsByDay[syn][dayBucket] = 0;
+            muscleSetsByDay[syn][dayBucket] += exSets;
+          });
+        });
+      });
+
+      // Build per-muscle summary
+      const result = {};
+      ALL_GROUPS.forEach(g => {
+        const daysMap = muscleVolumeByDay[g];
+        const setsMap = muscleSetsByDay[g];
+        const dayBuckets = Object.keys(daysMap).map(Number).filter(b => daysMap[b] > 0);
+        // Last trained day bucket (most recent)
+        let lastDayBucket = null;
+        dayBuckets.forEach(b => { if (lastDayBucket === null || b > lastDayBucket) lastDayBucket = b; });
+        const lastTrainedMs = lastDayBucket !== null ? lastDayBucket * MS_PER_DAY : null;
+        const lastTrainedDaysAgo = lastTrainedMs !== null ? (now - lastTrainedMs) / MS_PER_DAY : null;
+        // Recovery = exponential decay from last training day
+        const recovery = (lastTrainedDaysAgo !== null) ? recoveryPct(lastTrainedDaysAgo) : 100;
+        // Volume in last 7 / 30 days
+        let vol7d = 0, vol30d = 0, sets7d = 0, sets30d = 0;
+        dayBuckets.forEach(b => {
+          const daysAgo = dayBucketNow - b;
+          if (daysAgo >= 0 && daysAgo < 7)  { vol7d  += daysMap[b]; sets7d  += setsMap[b] || 0; }
+          if (daysAgo >= 0 && daysAgo < 30) { vol30d += daysMap[b]; sets30d += setsMap[b] || 0; }
+        });
+        result[g] = {
+          recovery: recovery,
+          lastTrainedDaysAgo: lastTrainedDaysAgo,
+          lastTrainedMs: lastTrainedMs,
+          volume7d: Math.round(vol7d),
+          volume30d: Math.round(vol30d),
+          sets7d: sets7d,
+          sets30d: sets30d,
+          status: statusBucket(recovery, lastTrainedDaysAgo)
+        };
+      });
+      return result;
+    }
+
+    /** Pick a color for a muscle based on recovery %.
+     *  fresh (>=85): green   | recovering (50-84): yellow | fatigued (<50): red | untrained: gray */
+    function muscleFillColor(recovery, lastTrainedDaysAgo) {
+      if (lastTrainedDaysAgo == null || !isFinite(lastTrainedDaysAgo)) return 'rgba(120,120,120,0.25)'; // untrained — muted gray
+      if (recovery >= 85) return 'rgba(34,197,94,0.65)';   // success/green
+      if (recovery >= 50) return 'rgba(245,158,11,0.65)';  // warning/yellow
+      return 'rgba(239,68,68,0.75)';                       // danger/red
+    }
+
+    /** Pick a color for a muscle based on volume (0 to maxVolume). */
+    function muscleVolumeColor(volume, maxVolume) {
+      if (!volume || volume <= 0) return 'rgba(120,120,120,0.2)';
+      if (!maxVolume || maxVolume <= 0) return 'rgba(120,120,120,0.2)';
+      const ratio = Math.min(1, volume / maxVolume);
+      // Interpolate: light blue (low) → bright blue (high)
+      const alpha = 0.25 + ratio * 0.6;
+      return 'rgba(59,130,246,' + alpha.toFixed(2) + ')'; // primary blue
+    }
+
+    /** Render the SVG body with muscle fills based on current mode. */
+    function renderBodySVG() {
+      const container = document.getElementById('rec-svg-container');
+      if (!container) return;
+      let svgStr = '';
+      if (_view === 'front') svgStr = window.BM_SVG_FRONT || '';
+      else if (_view === 'back') svgStr = window.BM_SVG_BACK || '';
+      else svgStr = window.BM_SVG_SIDE || '';
+      container.innerHTML = svgStr;
+
+      if (!_data) return;
+
+      // Compute max volume across all muscles for normalization (volume modes only)
+      let maxVol = 0;
+      if (_mode === '7d') {
+        ALL_GROUPS.forEach(g => { if (_data[g].volume7d > maxVol) maxVol = _data[g].volume7d; });
+      } else if (_mode === '30d') {
+        ALL_GROUPS.forEach(g => { if (_data[g].volume30d > maxVol) maxVol = _data[g].volume30d; });
+      }
+
+      // Apply fills to each .bm-muscle path
+      const paths = container.querySelectorAll('.bm-muscle');
+      paths.forEach(path => {
+        const g = path.getAttribute('data-group');
+        if (!g || !_data[g]) return;
+        const info = _data[g];
+        let fill;
+        if (_mode === 'recovery') {
+          fill = muscleFillColor(info.recovery, info.lastTrainedDaysAgo);
+        } else if (_mode === '7d') {
+          fill = muscleVolumeColor(info.volume7d, maxVol);
+        } else {
+          fill = muscleVolumeColor(info.volume30d, maxVol);
+        }
+        path.setAttribute('fill', fill);
+        path.setAttribute('stroke', 'rgba(0,0,0,0.4)');
+        path.setAttribute('stroke-width', '0.8');
+        // Add tooltip via title element
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        const lbl = (GROUP_LABELS[g] && GROUP_LABELS[g][currentLang()]) || g;
+        let tip = lbl;
+        if (_mode === 'recovery') {
+          tip += '\n' + (t('recovery.recovery') || 'Recovery') + ': ' + info.recovery + '%';
+          if (info.lastTrainedDaysAgo !== null) {
+            tip += '\n' + (t('recovery.lastTrained') || 'Last trained') + ': ' + Math.round(info.lastTrainedDaysAgo) + 'd ago';
+          } else {
+            tip += '\n' + (t('recovery.untrained') || 'Not trained yet');
+          }
+        } else if (_mode === '7d') {
+          tip += '\n' + (t('recovery.volume7d') || '7d volume') + ': ' + info.volume7d + 'kg\n' + info.sets7d + ' sets';
+        } else {
+          tip += '\n' + (t('recovery.volume30d') || '30d volume') + ': ' + info.volume30d + 'kg\n' + info.sets30d + ' sets';
+        }
+        title.textContent = tip;
+        path.appendChild(title);
+      });
+    }
+
+    /** Render the muscle list with bars on the right side of the modal. */
+    function renderMuscleList() {
+      const listEl = document.getElementById('rec-muscle-list');
+      if (!listEl || !_data) return;
+      const lang = currentLang();
+      // Sort muscles: trained first (most recent first), untrained last
+      const sorted = ALL_GROUPS.slice().sort((a, b) => {
+        const da = _data[a].lastTrainedDaysAgo;
+        const db = _data[b].lastTrainedDaysAgo;
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return da - db;
+      });
+
+      // Compute max for bar scaling
+      let maxVal = 0;
+      sorted.forEach(g => {
+        const v = (_mode === 'recovery') ? _data[g].recovery
+                : (_mode === '7d') ? _data[g].volume7d
+                : _data[g].volume30d;
+        if (v > maxVal) maxVal = v;
+      });
+
+      let html = '';
+      sorted.forEach(g => {
+        const info = _data[g];
+        const lbl = (GROUP_LABELS[g] && GROUP_LABELS[g][lang]) || g;
+        let val, valLabel, barPct, barColor;
+        if (_mode === 'recovery') {
+          val = info.recovery;
+          valLabel = info.recovery + '%';
+          barPct = info.recovery;
+          if (info.status === 'fresh') barColor = 'rgb(var(--c-success))';
+          else if (info.status === 'recovering') barColor = 'rgb(var(--c-warning))';
+          else if (info.status === 'fatigued') barColor = 'rgb(var(--c-danger))';
+          else barColor = 'rgb(var(--c-muted))';
+        } else if (_mode === '7d') {
+          val = info.volume7d;
+          valLabel = info.volume7d + 'kg · ' + info.sets7d + ' sets';
+          barPct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
+          barColor = 'rgb(var(--c-primary))';
+        } else {
+          val = info.volume30d;
+          valLabel = info.volume30d + 'kg · ' + info.sets30d + ' sets';
+          barPct = maxVal > 0 ? Math.round((val / maxVal) * 100) : 0;
+          barColor = 'rgb(var(--c-primary))';
+        }
+        let lastTrainedStr;
+        if (info.lastTrainedDaysAgo === null) {
+          lastTrainedStr = t('recovery.untrained') || 'Not trained';
+        } else if (info.lastTrainedDaysAgo < 1) {
+          lastTrainedStr = t('recovery.today') || 'Today';
+        } else {
+          lastTrainedStr = Math.round(info.lastTrainedDaysAgo) + 'd ' + (t('recovery.ago') || 'ago');
+        }
+        const statusCls = 'rec-status-' + info.status;
+        html += `<div class="rec-muscle-row ${statusCls}">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs font-bold flex-1 truncate">${esc(lbl)}</span>
+            <span class="text-[10px] text-muted shrink-0">${esc(lastTrainedStr)}</span>
+            <span class="text-xs font-mono font-bold shrink-0" style="min-width:60px;text-align:end">${esc(valLabel)}</span>
+          </div>
+          <div class="rec-bar"><div class="rec-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+        </div>`;
+      });
+      listEl.innerHTML = html;
+    }
+
+    /** Update the legend text under the SVG. */
+    function renderLegend() {
+      const el = document.getElementById('rec-legend');
+      if (!el) return;
+      const lang = currentLang();
+      if (_mode === 'recovery') {
+        el.innerHTML = (lang === 'ru' ? '🟢 Восстановлен · 🟡 Восстанавливается · 🔴 Утомлён · ⚪ Не тренирован'
+                       : lang === 'he' ? '🟢 מחלים · 🟡 בהחלמה · 🔴 עייף · ⚪ לא מאומן'
+                       : '🟢 Fresh · 🟡 Recovering · 🔴 Fatigued · ⚪ Untrained');
+      } else if (_mode === '7d') {
+        el.textContent = (lang === 'ru' ? 'Объём за 7 дней (kg)'
+                       : lang === 'he' ? 'נפח 7 ימים (kg)'
+                       : '7-day volume (kg)');
+      } else {
+        el.textContent = (lang === 'ru' ? 'Объём за 30 дней (kg)'
+                       : lang === 'he' ? 'נפח 30 ימים (kg)'
+                       : '30-day volume (kg)');
+      }
+    }
+
+    /** Update tab styling based on current mode/view. */
+    function updateTabStyling() {
+      // Mode tabs
+      ['recovery', '7d', '30d'].forEach(m => {
+        const btn = document.getElementById('rec-mode-' + m);
+        if (!btn) return;
+        if (_mode === m) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
+        else { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
+      });
+      // View tabs
+      ['front', 'back', 'side'].forEach(v => {
+        const btn = document.getElementById('rec-view-' + v);
+        if (!btn) return;
+        if (_view === v) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
+        else { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
+      });
+    }
+
+    /** Re-render everything based on current state. */
+    function renderAll() {
+      updateTabStyling();
+      renderBodySVG();
+      renderMuscleList();
+      renderLegend();
+    }
+
+    /** Open the modal for a given client. */
+    async function open(clientId) {
+      _clientId = clientId;
+      _mode = 'recovery';
+      _view = 'front';
+      // Show modal immediately with loading state
+      const modal = document.getElementById('recovery-map-modal');
+      if (modal) modal.classList.remove('hidden');
+      const subtitle = document.getElementById('recovery-subtitle');
+      if (subtitle) subtitle.textContent = (t('recovery.loading') || 'Loading...');
+      const listEl = document.getElementById('rec-muscle-list');
+      if (listEl) listEl.innerHTML = '<div class="text-center text-xs text-muted py-8">' + (t('recovery.loading') || 'Loading...') + '</div>';
+
+      // Compute recovery data
+      try {
+        _data = await computeForClient(clientId);
+      } catch (e) {
+        console.error('[recovery] compute failed:', e);
+        _data = null;
+      }
+      if (!_data) {
+        if (listEl) listEl.innerHTML = '<div class="text-center text-xs text-muted py-8">' + (t('recovery.error') || 'Failed to load') + '</div>';
+        return;
+      }
+
+      // Update subtitle with client name + workout count
+      try {
+        const client = await db.get('clients', clientId);
+        if (subtitle && client) {
+          const workouts = await db.find('workout_history', 'by_clientId', clientId);
+          const trainedCount = ALL_GROUPS.filter(g => _data[g].lastTrainedDaysAgo !== null).length;
+          subtitle.textContent = (client.full_name || client.name || '?') + ' · ' +
+                                  (workouts ? workouts.length : 0) + ' ' + (t('recovery.workouts') || 'workouts') + ' · ' +
+                                  trainedCount + '/' + ALL_GROUPS.length + ' ' + (t('recovery.musclesTrained') || 'muscles');
+        }
+      } catch (e) {}
+
+      renderAll();
+    }
+
+    function close() {
+      const modal = document.getElementById('recovery-map-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    /** Wire all event handlers (called once on app init). */
+    function wire() {
+      const closeBtn = document.getElementById('recovery-close');
+      if (closeBtn) closeBtn.addEventListener('click', close);
+      const modal = document.getElementById('recovery-map-modal');
+      if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+      // Mode tabs
+      ['recovery', '7d', '30d'].forEach(m => {
+        const btn = document.getElementById('rec-mode-' + m);
+        if (btn) btn.addEventListener('click', () => {
+          _mode = m;
+          renderAll();
+        });
+      });
+      // View tabs
+      ['front', 'back', 'side'].forEach(v => {
+        const btn = document.getElementById('rec-view-' + v);
+        if (btn) btn.addEventListener('click', () => {
+          _view = v;
+          updateTabStyling();
+          renderBodySVG();
+        });
+      });
+    }
+
+    return { open, close, wire, computeForClient };
+  })();
+
+  /* =====================================================================
      PHASE 5 — SMART PROGRAM GENERATOR
      Rule-based expert engine that parses the client's profile (goal,
      frequency, injuries, equipment, split preference) and constructs a
@@ -19589,10 +20123,23 @@ async function boot() {
           }
           return;
         }
+        // Recovery Map button — opens Fitbod-style recovery heat-map modal
+        if (e.target.closest('#profile-recovery-map')) {
+          if (screens.profile && screens.profile.clientId && typeof recoveryMap !== 'undefined') {
+            recoveryMap.open(screens.profile.clientId);
+          } else {
+            toast(t('recovery.openProfileFirst') || 'Open a client profile first', 'warning', 2200);
+          }
+          return;
+        }
       } catch (err) {
         console.error('[click delegation] error:', err);
       }
     });
+    // Wire recovery map modal events (mode/view tabs, close buttons)
+    if (typeof recoveryMap !== 'undefined' && typeof recoveryMap.wire === 'function') {
+      recoveryMap.wire();
+    }
 
     // Program builder: close (with confirmation), split change, add exercise, save
     const pbClose = document.getElementById('pb-close');
@@ -21095,6 +21642,26 @@ async function boot() {
         store_nutrition_plans: 'Nutrition plans',
         store_nutrition_templates: 'Nutrition templates',
       },
+      // ---- Tier 3: Recovery Map (Fitbod-style) ----
+      recovery: {
+        title: 'Recovery Map',
+        modeRecovery: 'Recovery',
+        mode7d: '7d Vol',
+        mode30d: '30d Vol',
+        loading: 'Loading...',
+        error: 'Failed to load recovery data',
+        recovery: 'Recovery',
+        lastTrained: 'Last trained',
+        untrained: 'Not trained yet',
+        today: 'Today',
+        ago: 'ago',
+        workouts: 'workouts',
+        musclesTrained: 'muscles trained',
+        volume7d: '7d volume',
+        volume30d: '30d volume',
+        openProfileFirst: 'Open a client profile first',
+        hint: 'Recovery model: ~6-day exponential decay. Synergist muscles receive 30% fatigue credit. Volume = sets × reps × weight for done sets only.',
+      },
       // ---- Phase 2: Auth + CRM (pre-seeded) ----
       auth: {
         login: 'Sign In',
@@ -22197,6 +22764,26 @@ async function boot() {
         store_nutrition_plans: 'Планы питания',
         store_nutrition_templates: 'Шаблоны питания',
       },
+      // ---- Tier 3: Recovery Map (Fitbod-style) ----
+      recovery: {
+        title: 'Карта восстановления',
+        modeRecovery: 'Восст.',
+        mode7d: '7д Объём',
+        mode30d: '30д Объём',
+        loading: 'Загрузка...',
+        error: 'Не удалось загрузить данные',
+        recovery: 'Восстановление',
+        lastTrained: 'Последняя тренировка',
+        untrained: 'Не тренирован',
+        today: 'Сегодня',
+        ago: 'назад',
+        workouts: 'тренировок',
+        musclesTrained: 'мышц тренировано',
+        volume7d: 'Объём за 7 дней',
+        volume30d: 'Объём за 30 дней',
+        openProfileFirst: 'Сначала откройте профиль клиента',
+        hint: 'Модель восстановления: экспоненциальный спад ~6 дней. Синергисты получают 30% усталости. Объём = подходы × повт. × вес (только выполненные).',
+      },
       auth: {
         login: 'Войти',
         logout: 'Выйти',
@@ -23295,6 +23882,26 @@ async function boot() {
         store_food_database: 'מאגר מזון',
         store_nutrition_plans: 'תוכניות תזונה',
         store_nutrition_templates: 'תבניות תזונה',
+      },
+      // ---- Tier 3: Recovery Map (Fitbod-style) ----
+      recovery: {
+        title: 'מפת התאוששות',
+        modeRecovery: 'התאוששות',
+        mode7d: '7י נפח',
+        mode30d: '30י נפח',
+        loading: 'טוען...',
+        error: 'טעינת נתונים נכשלה',
+        recovery: 'התאוששות',
+        lastTrained: 'אימון אחרון',
+        untrained: 'לא מאומן',
+        today: 'היום',
+        ago: '',
+        workouts: 'אימונים',
+        musclesTrained: 'שרירים מאומנים',
+        volume7d: 'נפח 7 ימים',
+        volume30d: 'נפח 30 ימים',
+        openProfileFirst: 'פתח תחילה פרופיל לקוח',
+        hint: 'מודל התאוששות: דעיכה מעריכית ~6 ימים. שרירים סינרגיסטים מקבלים 30% עייפות. נפח = סטים × חזרות × משקל (רק בוצעו).',
       },
       auth: {
         login: 'התחברות',
