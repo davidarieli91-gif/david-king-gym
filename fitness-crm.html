@@ -6349,74 +6349,23 @@
       if (c) openEdit(id);
     }
 
-    // === AMINO ACID TAB SWITCHING ===
+    // === MICRO TAB SWITCHING (delegates to nutritionPlans module) ===
+    // The actual logic lives in nutritionPlans.switchMicroTab so it has access
+    // to _editing, _foods, and the _currentMicroTab state.
     function switchMicroTab(tab) {
-      var tabs = ['vitamins','minerals','amino'];
-      tabs.forEach(function(t) {
-        var btn = document.getElementById('micro-tab-' + t);
-        if (t === tab) {
-          if (btn) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
-        } else {
-          if (btn) { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
-        }
-      });
-      // Show/hide lists
-      var microList = document.getElementById('micro-list');
-      var aminoList = document.getElementById('micro-amino-list');
-      if (tab === 'amino') {
-        if (microList) microList.classList.add('hidden');
-        if (aminoList) aminoList.classList.remove('hidden');
+      if (typeof nutritionPlans !== 'undefined' && typeof nutritionPlans.switchMicroTab === 'function') {
+        nutritionPlans.switchMicroTab(tab);
       } else {
-        if (microList) microList.classList.remove('hidden');
-        if (aminoList) aminoList.classList.add('hidden');
-        // Filter micro-list by group
-        var groupMap = { vitamins: 'vitamin', minerals: 'mineral' };
-        var targetGroup = groupMap[tab];
-        if (microList) {
-          var groups = microList.querySelectorAll('[data-micro-group]');
-          groups.forEach(function(el) {
-            if (el.getAttribute('data-micro-group') === targetGroup || (tab === 'vitamins' && el.getAttribute('data-micro-group') === 'other')) {
-              el.style.display = '';
-            } else {
-              el.style.display = 'none';
-            }
-          });
-        }
+        console.warn('[switchMicroTab] nutritionPlans module not ready yet');
       }
     }
-    
-    // Wire tab buttons
+    // Wire tab buttons (delegates lazily — nutritionPlans will exist by the time user clicks)
     var tabV = document.getElementById('micro-tab-vitamins');
     var tabM = document.getElementById('micro-tab-minerals');
     var tabA = document.getElementById('micro-tab-amino');
     if (tabV) tabV.addEventListener('click', function() { switchMicroTab('vitamins'); });
     if (tabM) tabM.addEventListener('click', function() { switchMicroTab('minerals'); });
-    if (tabA) tabA.addEventListener('click', function() {
-      switchMicroTab('amino');
-      // Render amino acids
-      var aminoList = document.getElementById('micro-amino-list');
-      if (!aminoList) return;
-      var lang = currentLang();
-      var weight = 70;
-      try { if (_client && _client.weight) weight = parseFloat(_client.weight) || 70; } catch(e) {}
-      var targets = calcAATargets(weight);
-      // Collect all foods from all meals
-      var allItems = [];
-      var meals = document.querySelectorAll('[data-meal-id]');
-      meals.forEach(function(mealEl) {
-        var rows = mealEl.querySelectorAll('[data-food-row]');
-        rows.forEach(function(row) {
-          var foodId = row.getAttribute('data-food-id');
-          var qty = parseFloat(row.getAttribute('data-qty') || '100');
-          if (foodId) {
-            var food = _allFoods.find(function(f) { return f.id === foodId; });
-            if (food) allItems.push({ food: food, quantity: qty });
-          }
-        });
-      });
-      var totals = sumAminoAcids(allItems);
-      aminoList.innerHTML = renderAAPanel(totals, targets, lang);
-    });
+    if (tabA) tabA.addEventListener('click', function() { switchMicroTab('amino'); });
     
     return { load, refresh, applyFilters, openCreate, openEdit, openEditById, closeModal,
              saveFromForm, deleteFromForm, setSearch, setSort, setGoalFilter };
@@ -16185,6 +16134,7 @@ Select foods for each meal. Output as JSON only.`;
     let _fpCallback = null;
     let _fpSource = 'all';
     let _fpExpandedCats = new Set();  // expanded category folders in food picker
+    let _currentMicroTab = 'vitamins'; // active tab in micronutrient modal: 'vitamins' | 'minerals' | 'amino'
 
 
     const MEAL_TYPES = [
@@ -16721,67 +16671,155 @@ Select foods for each meal. Output as JSON only.`;
       // Auto-expand all categories when searching
       const isSearching = !!query;
 
-      // Group by category (identical to main food database screen)
-      const groups = {};
-      filtered.forEach(f => {
-        const cat = f.category || 'other';
-        if (!groups[cat]) groups[cat] = [];
-        groups[cat].push(f);
-      });
-
-      // Sort categories by translated label (same as food database)
+      // Helpers (same as main food database screen)
       const catLabelFn = (typeof categoryLabel === 'function') ? categoryLabel : (c) => c;
       const catIconFn = (typeof categoryIcon === 'function') ? categoryIcon : () => '⭐';
       const localeFn = (typeof localeString === 'function') ? localeString : () => 'en';
-      const sortedCats = Object.keys(groups).sort((a, b) =>
-        catLabelFn(a).localeCompare(catLabelFn(b), localeFn()));
+
+      // Macro-group support: if MACRO_GROUPS + getMacroGroup are available, use
+      // a two-level tree (macro group → category → foods). Otherwise fall back
+      // to a flat category → foods list (legacy behaviour).
+      const useMacroGroups = (typeof getMacroGroup === 'function') && (typeof MACRO_GROUPS !== 'undefined');
+      const macroOrder = ['proteins', 'carbs', 'fats', 'other'];
+
+      // Render a single food row — shared by both code paths
+      function renderFoodRow(f) {
+        const name = (lang === 'ru' ? (f.name_ru || f.name_en || f.name_he || '?') : (lang === 'he' ? (f.name_he || f.name_en || '?') : (f.name_en || f.name_he || '?')));
+        const n = f.nutrition || {};
+        const srcInfo = (typeof FOOD_SOURCE_INFO !== 'undefined' && FOOD_SOURCE_INFO[f.source]) || { badge: '?', class: 'bg-muted/15 text-muted' };
+        const srcBadge = srcInfo.badge;
+        const srcClass = srcInfo.class;
+        const img = f.image_url
+          ? `<img src="${esc(f.image_url)}" class="w-full h-full object-contain bg-surface-2" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><svg class="w-3.5 h-3.5 text-muted hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`
+          : `<svg class="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
+        return `<div class="flex items-center gap-2 bg-surface border border-border rounded-lg p-2 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer" data-fp-pick="${esc(f.id)}">
+          <div class="w-7 h-7 rounded-lg shrink-0 overflow-hidden bg-surface-2 border border-border grid place-items-center">${img}</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">${esc(name)}</div>
+            <div class="text-[10px] text-muted">${Math.round(n.calories || 0)} ${t('nutrition.kcal')} · ${t('nutrition.proteinShort')}:${Math.round(n.protein || 0)} ${t('nutrition.carbsShort')}:${Math.round(n.carbs || 0)} ${t('nutrition.fatShort')}:${Math.round(n.fat || 0)} ${t('nutrition.per100g')}</div>
+          </div>
+          <button data-fp-view="${esc(f.id)}" class="text-muted hover:text-primary-2 transition w-6 h-6 grid place-items-center shrink-0" title="${t('common.view') || 'View'}" type="button">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${srcClass} shrink-0">${srcBadge}</span>
+        </div>`;
+      }
+
+      // Sort foods by name (current lang)
+      function sortFoodsByName(arr) {
+        return arr.sort((a, b) => {
+          const na = (lang === 'ru' ? (a.name_ru || a.name_en || a.name_he) : (lang === 'he' ? (a.name_he || a.name_en) : (a.name_en || a.name_he))) || '';
+          const nb = (lang === 'ru' ? (b.name_ru || b.name_en || b.name_he) : (lang === 'he' ? (b.name_he || b.name_en) : (b.name_en || b.name_he))) || '';
+          return na.localeCompare(nb, localeFn());
+        });
+      }
 
       let html = '';
-      sortedCats.forEach(cat => {
-        const foods = groups[cat];
-        const isExpanded = isSearching || _fpExpandedCats.has(cat);
-        const label = catLabelFn(cat);
-        const icon = catIconFn(cat);
-        html += `<div class="bg-surface-2/50 border border-border rounded-xl overflow-hidden mb-1">
-          <button class="w-full flex items-center gap-2 p-2 hover:bg-border/30 transition" data-fp-toggle-cat="${esc(cat)}">
-            <svg class="w-4 h-4 text-muted transition-transform ${isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-            <span class="text-lg shrink-0" style="width:1.5rem;text-align:center">${icon}</span>
-            <span class="flex-1 text-start text-sm font-semibold truncate">${esc(label)}</span>
-            <span class="text-[10px] text-muted font-mono">${foods.length}</span>
-          </button>`;
-        if (isExpanded) {
-          html += `<div class="space-y-0.5 p-1.5 pt-0">`;
-          // Sort foods by name (current lang)
-          foods.sort((a, b) => {
-            const na = (lang === 'ru' ? (a.name_ru || a.name_en || a.name_he) : (lang === 'he' ? (a.name_he || a.name_en) : (a.name_en || a.name_he))) || '';
-            const nb = (lang === 'ru' ? (b.name_ru || b.name_en || b.name_he) : (lang === 'he' ? (b.name_he || b.name_en) : (b.name_en || b.name_he))) || '';
-            return na.localeCompare(nb, localeFn());
-          }).forEach(f => {
-            const name = (lang === 'ru' ? (f.name_ru || f.name_en || f.name_he || '?') : (lang === 'he' ? (f.name_he || f.name_en || '?') : (f.name_en || f.name_he || '?')));
-            const n = f.nutrition || {};
-            const srcInfo = (typeof FOOD_SOURCE_INFO !== 'undefined' && FOOD_SOURCE_INFO[f.source]) || { badge: '?', class: 'bg-muted/15 text-muted' };
-            const srcBadge = srcInfo.badge;
-            const srcClass = srcInfo.class;
-            const img = f.image_url
-              ? `<img src="${esc(f.image_url)}" class="w-full h-full object-contain bg-surface-2" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><svg class="w-3.5 h-3.5 text-muted hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`
-              : `<svg class="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`;
-            html += `<div class="flex items-center gap-2 bg-surface border border-border rounded-lg p-2 hover:bg-border/30 hover:border-primary/30 transition cursor-pointer" data-fp-pick="${esc(f.id)}">
-              <div class="w-7 h-7 rounded-lg shrink-0 overflow-hidden bg-surface-2 border border-border grid place-items-center">${img}</div>
-              <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium truncate">${esc(name)}</div>
-                <div class="text-[10px] text-muted">${Math.round(n.calories || 0)} ${t('nutrition.kcal')} · ${t('nutrition.proteinShort')}:${Math.round(n.protein || 0)} ${t('nutrition.carbsShort')}:${Math.round(n.carbs || 0)} ${t('nutrition.fatShort')}:${Math.round(n.fat || 0)} ${t('nutrition.per100g')}</div>
-              </div>
-              <button data-fp-view="${esc(f.id)}" class="text-muted hover:text-primary-2 transition w-6 h-6 grid place-items-center shrink-0" title="${t('common.view') || 'View'}" type="button">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${srcClass} shrink-0">${srcBadge}</span>
-            </div>`;
-          });
+
+      if (useMacroGroups) {
+        // Build two-level structure: macroGroup → category → foods[]
+        const macroData = {};
+        macroOrder.forEach(g => { macroData[g] = {}; });
+        filtered.forEach(f => {
+          const mg = getMacroGroup(f);
+          const cat = f.category || 'other';
+          if (!macroData[mg][cat]) macroData[mg][cat] = [];
+          macroData[mg][cat].push(f);
+        });
+
+        macroOrder.forEach(mg => {
+          const cats = macroData[mg];
+          const catKeys = Object.keys(cats);
+          if (catKeys.length === 0) return;
+          const macroMeta = MACRO_GROUPS[mg];
+          const macroLabel = (macroMeta.label[lang] || macroMeta.label.en);
+          const macroIcon = macroMeta.icon;
+          const totalFoods = catKeys.reduce((sum, k) => sum + cats[k].length, 0);
+          const mgKey = 'macro:' + mg;
+          const mgExpanded = isSearching || _fpExpandedCats.has(mgKey);
+
+          // Macro group header (top-level folder)
+          html += `<div class="bg-surface-2/40 border border-border rounded-xl overflow-hidden mb-1.5">
+            <button class="w-full flex items-center gap-2 p-2.5 hover:bg-border/30 transition" data-fp-toggle-macro="${esc(mg)}">
+              <svg class="w-4 h-4 text-muted transition-transform ${mgExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              <span class="text-xl shrink-0" style="width:1.75rem;text-align:center">${macroIcon}</span>
+              <span class="flex-1 text-start text-sm font-bold truncate">${esc(macroLabel)}</span>
+              <span class="text-[10px] text-muted font-mono">${totalFoods}</span>
+            </button>`;
+
+          if (mgExpanded) {
+            html += `<div class="space-y-1 p-1.5 pt-1">`;
+            // Sort categories by translated label
+            catKeys.sort((a, b) => catLabelFn(a).localeCompare(catLabelFn(b), localeFn()));
+            catKeys.forEach(cat => {
+              const foods = cats[cat];
+              const catExpanded = isSearching || _fpExpandedCats.has(cat);
+              const label = catLabelFn(cat);
+              const icon = catIconFn(cat);
+
+              // Category header (sub-folder)
+              html += `<div class="bg-surface-2/30 border border-border/60 rounded-lg overflow-hidden">
+                <button class="w-full flex items-center gap-2 p-2 hover:bg-border/30 transition" data-fp-toggle-cat="${esc(cat)}">
+                  <svg class="w-3.5 h-3.5 text-muted transition-transform ${catExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  <span class="text-base shrink-0" style="width:1.5rem;text-align:center">${icon}</span>
+                  <span class="flex-1 text-start text-xs font-semibold truncate">${esc(label)}</span>
+                  <span class="text-[10px] text-muted font-mono">${foods.length}</span>
+                </button>`;
+              if (catExpanded) {
+                html += `<div class="space-y-0.5 px-1.5 pb-1.5">`;
+                sortFoodsByName(foods).forEach(f => { html += renderFoodRow(f); });
+                html += `</div>`;
+              }
+              html += `</div>`;
+            });
+            html += `</div>`;
+          }
           html += `</div>`;
         }
-        html += `</div>`;
-      });
+        );
+      } else {
+        // Legacy flat grouping: category → foods
+        const groups = {};
+        filtered.forEach(f => {
+          const cat = f.category || 'other';
+          if (!groups[cat]) groups[cat] = [];
+          groups[cat].push(f);
+        });
+        const sortedCats = Object.keys(groups).sort((a, b) =>
+          catLabelFn(a).localeCompare(catLabelFn(b), localeFn()));
+
+        sortedCats.forEach(cat => {
+          const foods = groups[cat];
+          const isExpanded = isSearching || _fpExpandedCats.has(cat);
+          const label = catLabelFn(cat);
+          const icon = catIconFn(cat);
+          html += `<div class="bg-surface-2/50 border border-border rounded-xl overflow-hidden mb-1">
+            <button class="w-full flex items-center gap-2 p-2 hover:bg-border/30 transition" data-fp-toggle-cat="${esc(cat)}">
+              <svg class="w-4 h-4 text-muted transition-transform ${isExpanded ? 'rotate-90' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              <span class="text-lg shrink-0" style="width:1.5rem;text-align:center">${icon}</span>
+              <span class="flex-1 text-start text-sm font-semibold truncate">${esc(label)}</span>
+              <span class="text-[10px] text-muted font-mono">${foods.length}</span>
+            </button>`;
+          if (isExpanded) {
+            html += `<div class="space-y-0.5 p-1.5 pt-0">`;
+            sortFoodsByName(foods).forEach(f => { html += renderFoodRow(f); });
+            html += `</div>`;
+          }
+          html += `</div>`;
+        });
+      }
+
       container.innerHTML = html;
+
+      // Wire macro-group toggle (only present in macro-group mode)
+      container.querySelectorAll('[data-fp-toggle-macro]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const mg = 'macro:' + btn.getAttribute('data-fp-toggle-macro');
+          if (_fpExpandedCats.has(mg)) _fpExpandedCats.delete(mg);
+          else _fpExpandedCats.add(mg);
+          renderFoodResults(query);
+        });
+      });
 
       // Wire category toggle (collapse/expand)
       container.querySelectorAll('[data-fp-toggle-cat]').forEach(btn => {
@@ -16967,9 +17005,110 @@ Select foods for each meal. Output as JSON only.`;
         toast(t('nutrition.openPlanFirst') || 'Open a plan first', 'warning', 2500);
         return;
       }
+      // Always start on the vitamins tab when freshly opening the modal
+      _currentMicroTab = 'vitamins';
       renderMicronutrientAnalysis();
+      // Apply the active tab styling + filter
+      _applyMicroTabStyling('vitamins');
       document.getElementById('micronutrient-modal').classList.remove('hidden');
     }
+
+    /** Update visual state of the three tab buttons (active vs muted). */
+    function _applyMicroTabStyling(tab) {
+      var tabs = ['vitamins','minerals','amino'];
+      tabs.forEach(function(t) {
+        var btn = document.getElementById('micro-tab-' + t);
+        if (!btn) return;
+        if (t === tab) {
+          btn.classList.add('bg-primary','text-white');
+          btn.classList.remove('text-muted');
+        } else {
+          btn.classList.remove('bg-primary','text-white');
+          btn.classList.add('text-muted');
+        }
+      });
+    }
+
+    /** Show/hide the data-micro-group wrappers inside #micro-list based on tab.
+     *  Called after every re-render of micronutrient bars to keep the filter in sync. */
+    function applyMicroListFilter(tab) {
+      var microList = document.getElementById('micro-list');
+      if (!microList) return;
+      var groupMap = { vitamins: 'vitamin', minerals: 'mineral' };
+      var targetGroup = groupMap[tab];
+      if (!targetGroup) return; // 'amino' tab uses separate list, no filter needed
+      var groups = microList.querySelectorAll('[data-micro-group]');
+      groups.forEach(function(el) {
+        var g = el.getAttribute('data-micro-group');
+        // Vitamins tab also shows 'other' group (fiber, cholesterol)
+        var show = (g === targetGroup) || (tab === 'vitamins' && g === 'other');
+        el.style.display = show ? '' : 'none';
+      });
+    }
+
+    /** Switch the active tab in the micronutrient modal. Updates button styling,
+     *  toggles visibility of #micro-list and #micro-amino-list, and re-applies
+     *  the group filter or renders the amino acid panel as needed. */
+    function switchMicroTab(tab) {
+      _currentMicroTab = tab;
+      _applyMicroTabStyling(tab);
+      var microList = document.getElementById('micro-list');
+      var aminoList = document.getElementById('micro-amino-list');
+      if (tab === 'amino') {
+        if (microList) microList.classList.add('hidden');
+        if (aminoList) aminoList.classList.remove('hidden');
+        renderAminoAcids();
+      } else {
+        if (microList) microList.classList.remove('hidden');
+        if (aminoList) aminoList.classList.add('hidden');
+        // If micro-list was overwritten (e.g. by suggestFoodsForGaps), re-render
+        var hasGroups = microList && microList.querySelector('[data-micro-group]');
+        if (!hasGroups) {
+          renderMicronutrientAnalysis();
+        } else {
+          applyMicroListFilter(tab);
+        }
+      }
+    }
+
+    /** Render the essential amino acid panel into #micro-amino-list.
+     *  Uses AA_PROFILES + runtime calculator so we don't need precomputed amino data. */
+    function renderAminoAcids() {
+      var aminoList = document.getElementById('micro-amino-list');
+      if (!aminoList) return;
+      var lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+      // Determine client weight — try screens.profile._client first, fall back to 70kg
+      var weight = 70;
+      try {
+        if (typeof screens !== 'undefined' && screens.profile && screens.profile._client) {
+          var c = screens.profile._client;
+          if (c && c.weight) weight = parseFloat(c.weight) || 70;
+        }
+      } catch(e) {}
+      var targets = (typeof calcAATargets === 'function') ? calcAATargets(weight) : {};
+      // Collect all foods from the editing plan's meals
+      var allItems = [];
+      if (_editing && _editing.meals) {
+        _editing.meals.forEach(function(meal) {
+          (meal.foods || []).forEach(function(f) {
+            if (f && f.id) {
+              var food = _foods.find(function(x) { return x.id === f.id; });
+              if (food) allItems.push({ food: food, quantity: f.grams || 100 });
+            }
+          });
+        });
+      }
+      var totals = (typeof sumAminoAcids === 'function') ? sumAminoAcids(allItems) : {};
+      // Empty-state hint if no foods in plan
+      if (allItems.length === 0) {
+        aminoList.innerHTML = '<div class="text-center py-6 text-xs text-muted">' +
+          (t('nutrition.addFoodFirst') || 'Add at least one food to the plan to see amino acid analysis') +
+          '</div>';
+        return;
+      }
+      aminoList.innerHTML = (typeof renderAAPanel === 'function') ? renderAAPanel(totals, targets, lang) : '';
+    }
+
 
     /** Render the micronutrient analysis: summary stats + nutrient bars. */
     function renderMicronutrientAnalysis() {
@@ -17073,6 +17212,8 @@ Select foods for each meal. Output as JSON only.`;
       });
       const listEl = document.getElementById('micro-list');
       if (listEl) listEl.innerHTML = fullHtml;
+      // Re-apply the active tab filter so the correct group is visible after re-render
+      applyMicroListFilter(_currentMicroTab);
     }
 
     /** Show suggestions for the top-3 most deficient nutrients.
@@ -17085,6 +17226,11 @@ Select foods for each meal. Output as JSON only.`;
       if (result.missing.length === 0) {
         toast(t('nutrition.noGaps') || 'All micronutrients covered — no major gaps', 'success', 3000);
         return;
+      }
+      // If user is on the amino tab, switch to vitamins first — suggestions
+      // are rendered into #micro-list which is hidden while on the amino tab.
+      if (_currentMicroTab === 'amino') {
+        switchMicroTab('vitamins');
       }
       // Top 3 most deficient
       const top3 = result.missing.slice(0, 3);
@@ -17173,6 +17319,7 @@ Select foods for each meal. Output as JSON only.`;
     return { loadFoods, loadPlans, openCreator, openEditor, savePlan, renderFoodResults,
              applyGenerated, _openPickerForTemplate, adjustMacro, scaleAllPortions,
              openMicronutrientAnalysis, renderMicronutrientAnalysis, suggestFoodsForGaps,
+             switchMicroTab, renderAminoAcids,
              scanBarcode, lookupBarcode,
              get _editing() { return _editing; }, get _foods() { return _foods; },
              set _fpSource(v) { _fpSource = v; } };
