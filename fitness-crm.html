@@ -42,7 +42,6 @@
   <!-- Tailwind CDN (Play CDN) — used for utility classes; custom theme tokens
        are layered via CSS variables below. -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script type="application/json" id="exercise-db-data">[]</script>
 <script>
     // Tailwind theme extension so utility classes pick up our design tokens.
     tailwind.config = {
@@ -52,12 +51,9 @@
           colors: {
             // Reference CSS variables so Tailwind utilities and raw CSS share
             // the same source of truth for theming.
-            // NOTE: both 'surface-2' (quoted, hyphenated) and 'surface2' (legacy)
-            // are exposed so existing markup using either class works.
             bg:          'rgb(var(--c-bg) / <alpha-value>)',
             surface:     'rgb(var(--c-surface) / <alpha-value>)',
             'surface-2': 'rgb(var(--c-surface-2) / <alpha-value>)',
-            surface2:    'rgb(var(--c-surface-2) / <alpha-value>)',
             border:      'rgb(var(--c-border) / <alpha-value>)',
             text:      'rgb(var(--c-text) / <alpha-value>)',
             muted:     'rgb(var(--c-muted) / <alpha-value>)',
@@ -1756,7 +1752,7 @@
           <div data-screen="profile" class="hidden p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
             <!-- Header (back button + name + edit) -->
             <div class="flex items-center gap-3 mb-5">
-              <button id="profile-back" class="w-9 h-9 grid place-items-center rounded-lg bg-surface-2 hover:bg-border/40 border border-border transition shrink-0" aria-label="Back">
+              <button id="profile-back" class="w-9 h-9 grid place-items-center rounded-lg bg-surface-2 hover:bg-border/40 border border-border transition shrink-0" aria-label="Back" data-i18n-attr="aria-label:aria.back">
                 <svg class="w-4 h-4 flip-rtl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
               <h1 id="profile-name" class="font-display font-extrabold text-xl tracking-tight truncate flex-1 min-w-0">—</h1>
@@ -1902,11 +1898,11 @@
             <div class="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
               <!-- Header -->
               <div class="flex items-center gap-2 mb-4">
-                <button id="live-workout-back" class="w-9 h-9 grid place-items-center rounded-lg bg-surface-2 hover:bg-border/40 border border-border transition shrink-0" aria-label="Back">
+                <button id="live-workout-back" class="w-9 h-9 grid place-items-center rounded-lg bg-surface-2 hover:bg-border/40 border border-border transition shrink-0" aria-label="Back" data-i18n-attr="aria-label:aria.back">
                   <svg class="w-4 h-4 flip-rtl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
                 <input type="text" id="live-workout-name" data-i18n-ph="workouts.workoutName" class="flex-1 min-w-0 bg-transparent border-none focus:outline-none font-display font-extrabold text-xl tracking-tight" />
-                <div class="text-right shrink-0">
+                <div class="text-end shrink-0">
                   <div class="font-mono font-bold text-lg" id="live-workout-duration">0:00</div>
                   <div class="text-[10px] text-muted uppercase tracking-wider" data-i18n="workouts.duration">Duration</div>
                 </div>
@@ -1970,11 +1966,11 @@
           </div>
 
           <!-- ============= EXERCISE PICKER MODAL (for live workout) ============= -->
-          <div id="exercise-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="exercise-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 class="font-display font-bold text-base flex-1" data-i18n="workouts.addExercise">Add exercise</h3>
-                <button id="exercise-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="exercise-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -1989,7 +1985,7 @@
           </div>
 
           <!-- ============= WORKOUT DETAIL MODAL (Step 26-28) ============= -->
-          <div id="workout-detail-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="workout-detail-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-4 border-b border-border flex items-center gap-3">
@@ -1997,7 +1993,7 @@
                   <h3 id="workout-detail-title" class="font-display font-bold text-base truncate">Workout</h3>
                   <p id="workout-detail-subtitle" class="text-xs text-muted truncate"></p>
                 </div>
-                <button id="workout-detail-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="workout-detail-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2029,14 +2025,14 @@
           </div>
 
           <!-- ============= TEMPLATE PICKER MODAL (Step 29-30: apply to client) ============= -->
-          <div id="template-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="template-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-md max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <div class="flex-1">
                   <h3 class="font-display font-bold text-base" data-i18n="workouts.applyTemplate">Apply template</h3>
                   <p id="template-picker-subtitle" class="text-xs text-muted truncate"></p>
                 </div>
-                <button id="template-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="template-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2048,14 +2044,14 @@
           <!-- Shows the list of exercises in a program day BEFORE starting
                the workout. User reviews exercises, then clicks "Start workout"
                inside this modal to begin the live workout (timer starts). -->
-          <div id="program-day-preview-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="program-day-preview-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <div class="flex-1 min-w-0">
                   <h3 id="program-day-preview-title" class="font-display font-bold text-base truncate">Workout</h3>
                   <p id="program-day-preview-subtitle" class="text-xs text-muted truncate"></p>
                 </div>
-                <button id="program-day-preview-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="program-day-preview-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2071,7 +2067,7 @@
           </div>
 
           <!-- ============= PROGRAM BUILDER MODAL ============= -->
-          <div id="program-builder-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="program-builder-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-2xl max-h-[95vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
@@ -2154,7 +2150,7 @@
           </div>
 
           <!-- ============= RECOVERY MAP MODAL (Tier 3 #1 — Fitbod-style recovery heat-map) ============= -->
-          <div id="recovery-map-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="recovery-map-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-3xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
@@ -2168,7 +2164,7 @@
                   <button id="rec-mode-7d" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="recovery.mode7d">7d Vol</button>
                   <button id="rec-mode-30d" class="px-3 py-1.5 rounded-md text-xs font-semibold transition text-muted" data-i18n="recovery.mode30d">30d Vol</button>
                 </div>
-                <button id="recovery-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close">
+                <button id="recovery-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2198,7 +2194,7 @@
           </div>
 
           <!-- ============= AUTO-ARRANGE MODAL (Tier 1 #2 — exercise reordering strategies) ============= -->
-          <div id="auto-arrange-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="auto-arrange-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-md max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
@@ -2206,7 +2202,7 @@
                   <h3 class="font-display font-bold text-base" data-i18n="programs.autoArrangeTitle">Auto-arrange day</h3>
                   <p class="text-xs text-muted" data-i18n="programs.autoArrangeSubtitle">Pick a strategy to reorder exercises in this day</p>
                 </div>
-                <button id="auto-arrange-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close">
+                <button id="auto-arrange-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2252,7 +2248,7 @@
           </div>
 
           <!-- ============= GENERATOR PREVIEW MODAL (Phase 5) ============= -->
-          <div id="generator-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="generator-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-lg max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-4 border-b border-border flex items-center gap-3">
@@ -2260,7 +2256,7 @@
                   <h3 class="font-display font-bold text-base" data-i18n="generator.title">Smart program generator</h3>
                   <p id="generator-subtitle" class="text-xs text-muted truncate"></p>
                 </div>
-                <button id="generator-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="generator-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2301,7 +2297,7 @@
           </div>
 
                     <!-- ============= BODY MAP PICKER MODAL (Quick Pick) ============= -->
-          <div id="bodymap-picker-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+          <div id="bodymap-picker-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-3xl max-h-[90vh] flex flex-col rounded-2xl border border-border shadow-float">
               <!-- Header -->
               <div class="p-3 border-b border-border flex items-center gap-2 shrink-0">
@@ -2376,16 +2372,16 @@
           </div>
 
           <!-- ============= FOLDER PICKER MODAL (move exercise/folder) ============= -->
-          <div id="folder-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="folder-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-md max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 class="font-display font-bold text-base flex-1" id="folder-picker-title" data-i18n="exercise.selectFolder">Select folder</h3>
-                <button id="folder-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="folder-picker-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
               <div class="p-3 border-b border-border">
-                <button id="folder-picker-root" class="w-full text-left text-sm font-medium p-2 hover:bg-surface-2 rounded-lg transition" data-target-path="" data-i18n="exercise.rootFolder">📁 Root (no folder)</button>
+                <button id="folder-picker-root" class="w-full text-start text-sm font-medium p-2 hover:bg-surface-2 rounded-lg transition" data-target-path="" data-i18n="exercise.rootFolder">📁 Root (no folder)</button>
               </div>
               <div id="folder-picker-tree" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
               <div class="p-3 border-t border-border">
@@ -2521,11 +2517,11 @@
           </div>
 
           <!-- ============= FOOD SEARCH MODAL (Steps 32-33) ============= -->
-          <div id="food-search-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="food-search-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 class="font-display font-bold text-base flex-1" data-i18n="nutrition.log">Log food</h3>
-                <button id="food-search-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="food-search-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2556,11 +2552,11 @@
           </div>
 
           <!-- ============= FOOD PORTION MODAL ============= -->
-          <div id="food-portion-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="food-portion-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 id="food-portion-title" class="font-display font-bold text-base flex-1 truncate">Food</h3>
-                <button id="food-portion-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="food-portion-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2595,11 +2591,11 @@
           </div>
 
           <!-- ============= CUSTOM FOOD MODAL ============= -->
-          <div id="custom-food-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="custom-food-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 class="font-display font-bold text-base flex-1" data-i18n="nutrition.customFood">Custom food</h3>
-                <button id="custom-food-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="custom-food-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -2653,11 +2649,11 @@
           </div>
 
           <!-- ============= NUTRITION TARGETS MODAL ============= -->
-          <div id="targets-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div id="targets-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
             <div class="bg-surface w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
               <div class="p-4 border-b border-border flex items-center gap-3">
                 <h3 class="font-display font-bold text-base flex-1" data-i18n="nutrition.editTargets">Edit targets</h3>
-                <button id="targets-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+                <button id="targets-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -3249,7 +3245,7 @@
 
     
     <!-- ============= NUTRITION PLAN BUILDER MODAL ============= -->
-    <div id="nutrition-plan-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="nutrition-plan-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-2xl max-h-[95vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
@@ -3313,7 +3309,7 @@
     </div>
 
     <!-- ============= FOOD PICKER MODAL ============= -->
-    <div id="food-picker-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="food-picker-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="p-3 border-b border-border flex items-center gap-2 shrink-0">
@@ -3344,7 +3340,7 @@
     </div>
 
     <!-- ============= MICRONUTRIENT ANALYSIS MODAL ============= -->
-    <div id="micronutrient-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="micronutrient-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-2xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
@@ -3380,15 +3376,15 @@
     </div>
 
     <!-- ============= IMAGE VIEWER MODAL (full-screen) ============= -->
-    <div id="viewer-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <button id="viewer-close" class="absolute top-4 end-4 w-10 h-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" aria-label="Close">
+    <div id="viewer-modal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <button id="viewer-close" class="absolute top-4 end-4 w-10 h-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" aria-label="Close" data-i18n-attr="aria-label:aria.close">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
       <img id="viewer-img" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg" />
     </div>
 
     <!-- ============= EXERCISE CARD MODAL (Steps 17-18) ============= -->
-    <div id="exercise-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="exercise-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="sticky top-0 z-10 bg-surface border-b border-border p-4 flex items-center gap-3">
@@ -3396,7 +3392,7 @@
           <button id="exercise-modal-edit" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted hover:text-text transition" aria-label="Edit" data-i18n-attr="aria-label:aria.edit">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button id="exercise-modal-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+          <button id="exercise-modal-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -3531,15 +3527,15 @@
     <datalist id="equipment-list"></datalist>
 
     <!-- ============= FOOD DETAIL MODAL (mirror of exercise-modal) ============= -->
-    <div id="food-detail-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="food-detail-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="sticky top-0 z-10 bg-surface border-b border-border p-4 flex items-center gap-3">
           <h3 id="food-detail-title" class="font-display font-bold text-base flex-1 min-w-0 truncate">Food</h3>
-          <button id="food-detail-edit" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted hover:text-text transition shrink-0" aria-label="Edit">
+          <button id="food-detail-edit" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted hover:text-text transition shrink-0" aria-label="Edit" data-i18n-attr="aria-label:aria.edit">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
-          <button id="food-detail-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close">
+          <button id="food-detail-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close" data-i18n-attr="aria-label:aria.close">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -3707,7 +3703,7 @@
     </div>
 
     <!-- ============= NUTRITION TEMPLATE MODAL (create/edit meal template) ============= -->
-    <div id="nutrition-template-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="nutrition-template-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-2xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
           <div class="flex-1 min-w-0">
@@ -3743,7 +3739,7 @@
     </div>
 
     <!-- ============= NUTRITION TEMPLATE PICKER MODAL (apply template to client) ============= -->
-    <div id="nutrition-template-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="nutrition-template-picker-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-md max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
           <h3 class="font-display font-bold text-base flex-1" data-i18n="nutrition.applyTemplate">Apply meal template</h3>
@@ -3756,12 +3752,12 @@
     </div>
 
     <!-- ============= CLIENT FORM MODAL (Steps 8-9) ============= -->
-    <div id="client-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div id="client-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
       <div class="bg-surface w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
         <!-- Header -->
         <div class="sticky top-0 z-10 bg-surface border-b border-border p-4 flex items-center gap-3">
           <h3 id="client-modal-title" class="font-display font-bold text-base">Add Client</h3>
-          <button id="client-modal-close" class="ms-auto w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close">
+          <button id="client-modal-close" class="ms-auto w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted" aria-label="Close" data-i18n-attr="aria-label:aria.close">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -4281,7 +4277,7 @@
      3-language (EN/RU/HE), with photos, structured by group → subgroup → equipment.
      Source: free-exercise-db (public domain) + Private Gym (trainer's custom DB).
      ===================================================================== */
-  /** Exercise database is loaded from <script type="application/json" id="exercise-db-data"> */
+  /** Exercise database is fetched from exercise-db.json at runtime (was: inline script tag — removed). */
   let EXERCISE_DB_RAW = '[]';
       let _exerciseDbLoaded = false;
       async function loadExerciseDbExternal() {
@@ -4746,7 +4742,7 @@
      Exposes a small, ergonomic API the rest of the app will use:
         db.open()            → opens/initializes the database (idempotent)
         db.get(store, key)   → one record by primary key
-        db.all(store, {index, range, dir}) → all records (optionally via index)
+        db.all(store, {index, range, limit}) → all records (optionally via index)
         db.find(store, index, value)       → records where index === value
         db.put(store, obj)   → insert OR update (auto-stamps created_at/updated_at
                                if missing and store keyPath is 'id' AND obj has no id
@@ -4849,13 +4845,12 @@
 
     function all(storeName, opts = {}) {
       assertStore(storeName);
-      const { index, range, dir } = opts;
+      const { index, range } = opts;
       return open().then(idb => {
         const tx = idb.transaction(storeName, 'readonly');
         const store = tx.objectStore(storeName);
         const source = index ? store.index(index) : store;
         const request = source.getAll(range || null, opts.limit || undefined);
-        if (dir) request.direction = dir; // informational; actual direction set on openCursor
         return req(request);
       });
     }
@@ -5293,21 +5288,49 @@
       )));
     }
 
-    /** SHA-256(salt + ':' + password) → base64. Uses Web Crypto when available,
-     *  falls back to pure-JS implementation on file:// protocol. */
+    /** PBKDF2(password, salt, 100000 iterations, SHA-256) → base64.
+     *  Uses Web Crypto when available. Falls back to single-pass SHA-256
+     *  on file:// protocol (weaker but better than nothing).
+     *
+     *  Migration (2026-08 QA fix): old passwords were stored as single-pass
+     *  SHA-256. To preserve backward compat, this function returns a hash
+     *  tagged with the algorithm used: 'pbkdf2$<base64>' or 'sha256$<base64>'.
+     *  verifyPassword() checks both formats. When an old SHA-256 password is
+     *  successfully verified, it is transparently upgraded to PBKDF2. */
     async function _hash(password, salt) {
+      if (_hasSubtle) {
+        try {
+          const enc = new TextEncoder();
+          const keyMaterial = await crypto.subtle.importKey(
+            'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+          );
+          const saltBytes = enc.encode(salt);
+          const buf = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+            keyMaterial, 256
+          );
+          return 'pbkdf2$' + btoa(String.fromCharCode(...new Uint8Array(buf)));
+        } catch (e) {
+          console.warn('[auth] PBKDF2 failed, falling back to SHA-256', e);
+        }
+      }
+      // Fallback (file:// protocol or crypto.subtle unavailable)
+      const message = salt + ':' + password;
+      return 'sha256$' + _sha256Sync(message);
+    }
+
+    /** Legacy single-pass SHA-256 hash — only used to verify old stored passwords
+     *  that haven't yet been migrated to PBKDF2. */
+    async function _hashLegacySha256(password, salt) {
       const message = salt + ':' + password;
       if (_hasSubtle) {
         try {
           const enc = new TextEncoder();
           const buf = await crypto.subtle.digest('SHA-256', enc.encode(message));
-          return btoa(String.fromCharCode(...new Uint8Array(buf)));
-        } catch (e) {
-          console.warn('[auth] crypto.subtle failed, falling back to sync SHA-256', e);
-        }
+          return 'sha256$' + btoa(String.fromCharCode(...new Uint8Array(buf)));
+        } catch (e) { /* fall through */ }
       }
-      // Fallback (file:// protocol or crypto.subtle unavailable)
-      return _sha256Sync(message);
+      return 'sha256$' + _sha256Sync(message);
     }
 
     /** Generate random 16-byte salt. Uses crypto.getRandomValues when available,
@@ -5342,8 +5365,45 @@
       const hashRow = await db.get('settings', 'auth_password_hash');
       const saltRow = await db.get('settings', 'auth_password_salt');
       if (!hashRow || !saltRow) return false;
-      const candidate = await _hash(password, saltRow.value);
-      const ok = candidate === hashRow.value;
+      const storedHash = hashRow.value;
+      const salt = saltRow.value;
+      // Compute candidate hash using the new PBKDF2 algorithm
+      const candidate = await _hash(password, salt);
+      let ok = (candidate === storedHash);
+      // Backward compat: if stored hash has no algorithm prefix, it's a legacy
+      // single-pass SHA-256 hash. Re-compute using legacy algorithm and compare.
+      if (!ok && typeof storedHash === 'string' && storedHash.indexOf('$') === -1) {
+        const legacyCandidate = await _hashLegacySha256(password, salt);
+        // Legacy stored hashes were saved WITHOUT the 'sha256$' prefix,
+        // so we compare against the raw base64 storedHash.
+        const legacyRaw = legacyCandidate.split('$')[1];
+        if (legacyRaw === storedHash) {
+          ok = true;
+          // Transparent upgrade: re-hash with PBKDF2 and save
+          try {
+            const newHash = await _hash(password, salt);
+            await db.put('settings', { key: 'auth_password_hash', value: newHash });
+            console.info('[auth] password upgraded from SHA-256 to PBKDF2');
+          } catch (e) {
+            console.warn('[auth] failed to upgrade legacy password hash', e);
+          }
+        }
+      }
+      // Also handle case where stored hash is 'sha256$<base64>' explicitly
+      if (!ok && typeof storedHash === 'string' && storedHash.startsWith('sha256$')) {
+        const legacyCandidate = await _hashLegacySha256(password, salt);
+        if (legacyCandidate === storedHash) {
+          ok = true;
+          // Transparent upgrade to PBKDF2
+          try {
+            const newHash = await _hash(password, salt);
+            await db.put('settings', { key: 'auth_password_hash', value: newHash });
+            console.info('[auth] password upgraded from SHA-256 to PBKDF2');
+          } catch (e) {
+            console.warn('[auth] failed to upgrade legacy password hash', e);
+          }
+        }
+      }
       if (ok) _state.unlocked = true;
       return ok;
     }
@@ -5492,6 +5552,117 @@
           browsers that respect it.
        E. Re-init on pageshow(bfcache) in case the page was suspended.
      ===================================================================== */
+  /* =====================================================================
+     FOCUS TRAP — accessibility helper for modal dialogs (2026-08 QA Sprint 2 #1)
+     ---------------------------------------------------------------------
+     When a modal opens, moves focus to its first focusable child.
+     Traps Tab/Shift+Tab inside the modal so screen-reader users can't
+     accidentally tab out to the background.
+     Restores focus to the triggering element when the modal closes.
+     Listens for .hidden class changes via a MutationObserver.
+     ===================================================================== */
+  const focusTrap = (function () {
+    const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    let _lastFocused = null;  // element that had focus before modal opened
+    let _observer = null;
+    let _activeModal = null;
+
+    function _getFocusable(modal) {
+      return Array.from(modal.querySelectorAll(FOCUSABLE)).filter(el => {
+        if (el.disabled) return false;
+        if (el.getAttribute('tabindex') === '-1') return false;
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return false;
+        return true;
+      });
+    }
+
+    function _onKeyDown(e) {
+      if (!_activeModal) return;
+      if (e.key !== 'Tab') return;
+      const focusable = _getFocusable(_activeModal);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first || !_activeModal.contains(document.activeElement)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !_activeModal.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    function _onMutation(mutations) {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          // Check if it's a modal that just became visible (or was added without .hidden)
+          if (node.matches && node.matches('[role="dialog"]') && !node.classList.contains('hidden')) {
+            _lastFocused = document.activeElement;
+            _activeModal = node;
+            // Move focus to first focusable element inside modal
+            setTimeout(() => {
+              const focusable = _getFocusable(node);
+              if (focusable.length > 0) focusable[0].focus();
+            }, 50);
+            return;
+          }
+        }
+        for (const node of m.removedNodes) {
+          // Modal removed from DOM — restore focus
+          if (node === _activeModal) {
+            if (_lastFocused && typeof _lastFocused.focus === 'function') {
+              _lastFocused.focus();
+            }
+            _activeModal = null;
+            _lastFocused = null;
+            return;
+          }
+        }
+        // Check class changes (hidden added/removed on existing modal)
+        if (m.type === 'attributes' && m.attributeName === 'class' && m.target.matches && m.target.matches('[role="dialog"]')) {
+          const isHidden = m.target.classList.contains('hidden');
+          if (!isHidden && _activeModal !== m.target) {
+            // Modal just became visible
+            _lastFocused = document.activeElement;
+            _activeModal = m.target;
+            setTimeout(() => {
+              const focusable = _getFocusable(m.target);
+              if (focusable.length > 0) focusable[0].focus();
+            }, 50);
+          } else if (isHidden && _activeModal === m.target) {
+            // Modal just hidden — restore focus
+            if (_lastFocused && typeof _lastFocused.focus === 'function') {
+              _lastFocused.focus();
+            }
+            _activeModal = null;
+            _lastFocused = null;
+          }
+        }
+      }
+    }
+
+    function init() {
+      if (_observer) return;  // already initialized
+      _observer = new MutationObserver(_onMutation);
+      _observer.observe(document.body, {
+        childList: true,
+        subtree: false,  // only direct children of body (modals are direct children)
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      document.addEventListener('keydown', _onKeyDown);
+      console.info('[focusTrap] initialized — observing', document.querySelectorAll('[role="dialog"]').length, 'modals');
+    }
+
+    return { init };
+  })();
+
   const backTrap = (function () {
     const MODAL_IDS = [
       'client-modal','exercise-modal','exercise-picker-modal','food-search-modal',
@@ -6211,6 +6382,41 @@
     }
     function escapeAttr(s) { return escapeHTML(s); }
     function esc(s) { return escapeHTML(s); }
+    // Aliases for modules that use different naming conventions (deduplication 2026-08 QA Sprint 2 #5):
+    // - escHTML / escAttr: used by exercises screen IIFE
+    // - setText(id, val): shared helper used by 4 different IIFEs (was duplicated 4×)
+    // - avatarGradient / initials / goalBadgeClass: previously duplicated in dashboard + profile IIFEs
+    function escHTML(s) { return escapeHTML(s); }
+    function escAttr(s) { return escapeAttr(s); }
+    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+    function goalBadgeClass(goal) {
+      return {
+        hypertrophy: 'bg-primary/15 text-primary-2',
+        strength:    'bg-danger/15 text-danger',
+        fat_loss:    'bg-warning/15 text-warning',
+        endurance:   'bg-accent/15 text-accent',
+        rehab:       'bg-success/15 text-success'
+      }[goal] || 'bg-muted/15 text-muted';
+    }
+    function avatarGradient(name) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      const h1 = Math.abs(hash) % 360;
+      const h2 = (h1 + 50) % 360;
+      return `linear-gradient(135deg, hsl(${h1}, 65%, 55%), hsl(${h2}, 70%, 60%))`;
+    }
+    function initials(name) {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    /** Format seconds as M:SS (deduplication 2026-08 QA Sprint 2 #5 — was inlined 3×). */
+    function formatDuration(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
 
   screens.dashboard = (function () {
     let _clients = [];
@@ -6321,31 +6527,7 @@
       `;
     }
 
-    function goalBadgeClass(goal) {
-      return {
-        hypertrophy: 'bg-primary/15 text-primary-2',
-        strength:    'bg-danger/15 text-danger',
-        fat_loss:    'bg-warning/15 text-warning',
-        endurance:   'bg-accent/15 text-accent',
-        rehab:       'bg-success/15 text-success'
-      }[goal] || 'bg-muted/15 text-muted';
-    }
-
-    /** Deterministic gradient from name hash → consistent per client. */
-    function avatarGradient(name) {
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      const h1 = Math.abs(hash) % 360;
-      const h2 = (h1 + 50) % 360;
-      return `linear-gradient(135deg, hsl(${h1}, 65%, 55%), hsl(${h2}, 70%, 60%))`;
-    }
-
-    function initials(name) {
-      if (!name) return '?';
-      const parts = name.trim().split(/\s+/);
-      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
+    // goalBadgeClass / avatarGradient / initials are now global (moved to top-level, 2026-08 QA Sprint 2 #5).
 
 
     /** Open the modal in create mode (empty form). */
@@ -7960,7 +8142,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
             const typeBadge = setType !== 'normal'
               ? `<span class="text-[8px] font-bold px-1 py-0.5 rounded border ${setTypeColors[setType] || ''}" title="${escapeAttr(setTypeLabel(setType))}">${setTypeIcons[setType]} ${escapeHTML(setTypeLabel(setType))}</span>`
               : '';
-            const setRowBg = setType !== 'normal' ? `border border-l-2 ${setTypeColors[setType] || ''}` : '';
+            const setRowBg = setType !== 'normal' ? `border border-s-2 ${setTypeColors[setType] || ''}` : '';
             setsHtml += `<div class="flex items-center gap-2 bg-surface rounded-lg p-1.5 ${setRowBg}">
               <span class="text-[10px] font-mono font-bold text-muted w-5 shrink-0">${si + 1}</span>
               ${typeBadge}
@@ -9111,6 +9293,62 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       const client = await db.get('clients', prog.client_id);
       const lang = currentLang();
 
+      // Localization labels for the PG tune panel (2026-08 QA Sprint 2 #4).
+      // Previously the entire panel was hardcoded in Russian.
+      // Named LPG (Labels PG) to avoid clash with `const L = JSON.parse(...)` PG layout variable below.
+      const LPG = lang === 'ru' ? {
+        x: 'X', y: 'Y', rotation: 'Поворот', scale: 'Масштаб', opacity: 'Прозрачность',
+        rotLeftHint: 'Поворот влево на 1°', rotRightHint: 'Поворот вправо на 1°', rotResetHint: 'Сброс поворота',
+        grid: 'сетка', blocks: 'блоки', blur: 'размытие', print: 'Печать',
+        barHint: 'Поворот/масштаб/прозрачность → сверху. Блоки 1/2/3 — вкл/выкл.',
+        block1Title: 'Блок 1 — Анкета (имя, возраст, вес)',
+        block2Title: 'Блок 2 — Техника тренировки',
+        block3Title: 'Блок 3 — Разминка и кардио',
+        width: 'Ширина', height: 'Высота', font: 'Шрифт', field: 'Поле',
+        block1Hint: '↑ Каждое поле анкеты отдельно: X, Y, ширина, шрифт.',
+        colShiftX: 'Сдвиг колонок X', colScale: 'Масштаб колонок',
+        shiftX: 'Сдвиг X', shiftY: 'Сдвиг Y',
+        tableSectionsTitle: 'Секции таблицы — строки и ширина',
+        tableWidth: 'Ширина таблицы %', rowHeight: 'Высота строки (мм)',
+        section: 'Секция', top: 'верх', step: 'шаг', rows: 'строк', widthPct: 'ширина %',
+        sectionsHint: '↑ / ↓ = верх строки и шаг (мм). «Строк» применится при следующем открытии.',
+        resetAll: 'Сброс всего'
+      } : lang === 'he' ? {
+        x: 'X', y: 'Y', rotation: 'סיבוב', scale: 'קנה מידה', opacity: 'שקיפות',
+        rotLeftHint: 'סובב שמאלה 1°', rotRightHint: 'סובב ימינה 1°', rotResetHint: 'אפס סיבוב',
+        grid: 'רשת', blocks: 'בלוקים', blur: 'טשטוש', print: 'הדפסה',
+        barHint: 'סיבוב/קנה מידה/שקיפות ← למעלה. בלוקים 1/2/3 — הפעלה/כיבוי.',
+        block1Title: 'בלוק 1 — שאלון (שם, גיל, משקל)',
+        block2Title: 'בלוק 2 — טכניקת אימון',
+        block3Title: 'בלוק 3 — חימום וקרדיו',
+        width: 'רוחב', height: 'גובה', font: 'גופן', field: 'שדה',
+        block1Hint: '↑ כל שדה שאלון בנפרד: X, Y, רוחב, גופן.',
+        colShiftX: 'הזזת עמודות X', colScale: 'קנה מידה עמודות',
+        shiftX: 'הזזה X', shiftY: 'הזזה Y',
+        tableSectionsTitle: 'מקטעי טבלה — שורות ורוחב',
+        tableWidth: 'רוחב טבלה %', rowHeight: 'גובה שורה (מ"מ)',
+        section: 'מקטע', top: 'עליון', step: 'צעד', rows: 'שורות', widthPct: 'רוחב %',
+        sectionsHint: '↑ / ↓ = ראש שורה וצעד (מ"מ). "שורות" יחול בפתיחה הבאה.',
+        resetAll: 'אפס הכל'
+      } : {
+        x: 'X', y: 'Y', rotation: 'Rotation', scale: 'Scale', opacity: 'Opacity',
+        rotLeftHint: 'Rotate left by 1°', rotRightHint: 'Rotate right by 1°', rotResetHint: 'Reset rotation',
+        grid: 'grid', blocks: 'blocks', blur: 'blur', print: 'Print',
+        barHint: 'Rotation/scale/opacity → at top. Blocks 1/2/3 — toggle on/off.',
+        block1Title: 'Block 1 — Questionnaire (name, age, weight)',
+        block2Title: 'Block 2 — Workout technique',
+        block3Title: 'Block 3 — Warm-up and cardio',
+        width: 'Width', height: 'Height', font: 'Font', field: 'Field',
+        block1Hint: '↑ Each questionnaire field separately: X, Y, width, font.',
+        colShiftX: 'Column shift X', colScale: 'Column scale',
+        shiftX: 'Shift X', shiftY: 'Shift Y',
+        tableSectionsTitle: 'Table sections — rows and width',
+        tableWidth: 'Table width %', rowHeight: 'Row height (mm)',
+        section: 'Section', top: 'top', step: 'step', rows: 'rows', widthPct: 'width %',
+        sectionsHint: '↑ / ↓ = row top and step (mm). "Rows" applies on next open.',
+        resetAll: 'Reset all'
+      };
+
       // Load exercise cache from IndexedDB
       let exerciseCache = [];
       try { exerciseCache = await db.all('exercise_base'); } catch (e) {}
@@ -9330,38 +9568,38 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         '<div id="bar">' +
           '<b>🏋️ Private Gym</b>' +
           '<div class="sep"></div>' +
-          '<label>X: <input type="number" id="offX" step="0.5" value="' + (cal.x || 0) + '"></label>' +
-          '<label>Y: <input type="number" id="offY" step="0.5" value="' + (cal.y || 0) + '"></label>' +
+          '<label>' + LPG.x + ': <input type="number" id="offX" step="0.5" value="' + (cal.x || 0) + '"></label>' +
+          '<label>' + LPG.y + ': <input type="number" id="offY" step="0.5" value="' + (cal.y || 0) + '"></label>' +
           '<div class="sep"></div>' +
-          '<label>↻ Поворот: <input type="range" id="rot" min="-180" max="180" step="0.5" value="' + (cal.rot || 0) + '"><span id="rotVal" style="min-width:38px;display:inline-block;">' + (cal.rot || 0) + '°</span></label>' +
-          '<label>🔍 Масштаб: <input type="range" id="scl" min="0.5" max="2" step="0.01" value="' + (cal.scale || 1) + '"><span id="sclVal" style="min-width:34px;display:inline-block;">' + Math.round((cal.scale || 1) * 100) + '%</span></label>' +
+          '<label>↻ ' + LPG.rotation + ': <input type="range" id="rot" min="-180" max="180" step="0.5" value="' + (cal.rot || 0) + '"><span id="rotVal" style="min-width:38px;display:inline-block;">' + (cal.rot || 0) + '°</span></label>' +
+          '<label>🔍 ' + LPG.scale + ': <input type="range" id="scl" min="0.5" max="2" step="0.01" value="' + (cal.scale || 1) + '"><span id="sclVal" style="min-width:34px;display:inline-block;">' + Math.round((cal.scale || 1) * 100) + '%</span></label>' +
           '<div class="sep"></div>' +
-          '<label>👁 Прозрачность: <input type="range" id="opa" min="0" max="1" step="0.05" value="0.9"><span id="opaVal" style="min-width:34px;display:inline-block;">90%</span></label>' +
+          '<label>👁 ' + LPG.opacity + ': <input type="range" id="opa" min="0" max="1" step="0.05" value="0.9"><span id="opaVal" style="min-width:34px;display:inline-block;">90%</span></label>' +
           '<div class="sep"></div>' +
-          '<button class="ghost" id="rotL"  title="Поворот влево на 1°">⟲ −1°</button>' +
-          '<button class="ghost" id="rotR"  title="Поворот вправо на 1°">⟳ +1°</button>' +
-          '<button class="ghost" id="rotReset" title="Сброс поворота">⊕ 0°</button>' +
+          '<button class="ghost" id="rotL"  title="' + LPG.rotLeftHint + '">⟲ −1°</button>' +
+          '<button class="ghost" id="rotR"  title="' + LPG.rotRightHint + '">⟳ +1°</button>' +
+          '<button class="ghost" id="rotReset" title="' + LPG.rotResetHint + '">⊕ 0°</button>' +
           '<div class="sep"></div>' +
           '<label class="blk-toggle" id="blk1ToggleLbl"><input type="checkbox" id="blk1Chk" checked> 1📋</label>' +
           '<label class="blk-toggle" id="blk2ToggleLbl"><input type="checkbox" id="blk2Chk" checked> 2💪</label>' +
           '<label class="blk-toggle" id="blk3ToggleLbl"><input type="checkbox" id="blk3Chk" checked> 3🏃</label>' +
           '<div class="sep"></div>' +
-          '<label><input type="checkbox" id="gridChk"> сетка</label>' +
-          '<label><input type="checkbox" id="tuneChk" checked> блоки</label>' +
-          '<label><input type="checkbox" id="blurChk"> размытие</label>' +
-          '<button onclick="window.print()">🖨️ Печать</button>' +
-          '<span class="hint">Поворот/масштаб/прозрачность → сверху. Блоки 1/2/3 — вкл/выкл.</span>' +
+          '<label><input type="checkbox" id="gridChk"> ' + LPG.grid + '</label>' +
+          '<label><input type="checkbox" id="tuneChk" checked> ' + LPG.blocks + '</label>' +
+          '<label><input type="checkbox" id="blurChk"> ' + LPG.blur + '</label>' +
+          '<button onclick="window.print()">🖨️ ' + LPG.print + '</button>' +
+          '<span class="hint">' + LPG.barHint + '</span>' +
         '</div>' +
         '<div id="tunePanel">' +
           '<div class="tune-group">' +
-            '<h4>📋 Блок 1 — Анкета (имя, возраст, вес)</h4>' +
-            '<label>X: <input type="number" id="bix" step="0.5" value="' + bInfo.x + '"></label>' +
-            '<label>Y: <input type="number" id="biy" step="0.5" value="' + bInfo.y + '"></label>' +
-            '<label>Ширина: <input type="number" id="biw" step="0.01" min="0.3" max="3" value="' + bInfo.w + '"></label>' +
-            '<label>Высота: <input type="number" id="bih" step="0.01" min="0.3" max="3" value="' + bInfo.h + '"></label>' +
-            '<label>Поворот: <input type="range" id="bir" min="-30" max="30" step="0.5" value="' + bInfo.rot + '"><span id="birVal">' + bInfo.rot + '°</span></label>' +
-            '<label>Шрифт: <input type="number" id="bifs" step="0.1" min="5" max="14" value="' + (bInfo.fs || 8.5) + '"></label>' +
-            '<table style="margin-top:6px;"><tr><th>Поле</th><th>X</th><th>Y</th><th>Ширина</th><th>Шрифт</th></tr>' +
+            '<h4>📋 ' + LPG.block1Title + '</h4>' +
+            '<label>' + LPG.x + ': <input type="number" id="bix" step="0.5" value="' + bInfo.x + '"></label>' +
+            '<label>' + LPG.y + ': <input type="number" id="biy" step="0.5" value="' + bInfo.y + '"></label>' +
+            '<label>' + LPG.width + ': <input type="number" id="biw" step="0.01" min="0.3" max="3" value="' + bInfo.w + '"></label>' +
+            '<label>' + LPG.height + ': <input type="number" id="bih" step="0.01" min="0.3" max="3" value="' + bInfo.h + '"></label>' +
+            '<label>' + LPG.rotation + ': <input type="range" id="bir" min="-30" max="30" step="0.5" value="' + bInfo.rot + '"><span id="birVal">' + bInfo.rot + '°</span></label>' +
+            '<label>' + LPG.font + ': <input type="number" id="bifs" step="0.1" min="5" max="14" value="' + (bInfo.fs || 8.5) + '"></label>' +
+            '<table style="margin-top:6px;"><tr><th>' + LPG.field + '</th><th>X</th><th>Y</th><th>' + LPG.width + '</th><th>' + LPG.font + '</th></tr>' +
             fieldData.map(f => '<tr><td style="text-align:right;font-size:10px;">' + f.label + '</td>' +
               '<td><input type="number" step="0.5" id="fld_' + f.id + '_x" value="' + f.x + '"></td>' +
               '<td><input type="number" step="0.5" id="fld_' + f.id + '_y" value="' + f.y + '"></td>' +
@@ -9369,33 +9607,33 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               '<td><input type="number" step="0.1" min="5" max="14" id="fld_' + f.id + '_fs" value="' + (f.fs || '') + '"></td>' +
               '</tr>').join('') +
             '</table>' +
-            '<div class="hint">↑ Каждое поле анкеты отдельно: X, Y, ширина, шрифт.</div>' +
+            '<div class="hint">' + LPG.block1Hint + '</div>' +
           '</div>' +
           '<div class="tune-group">' +
-            '<h4>💪 Блок 2 — Техника тренировки</h4>' +
-            '<label>X: <input type="number" id="bmx" step="0.5" value="' + bMain.x + '"></label>' +
-            '<label>Y: <input type="number" id="bmy" step="0.5" value="' + bMain.y + '"></label>' +
-            '<label>Ширина: <input type="number" id="bmw" step="0.01" min="0.3" max="3" value="' + bMain.w + '"></label>' +
-            '<label>Высота: <input type="number" id="bmh" step="0.01" min="0.3" max="3" value="' + bMain.h + '"></label>' +
-            '<label>Поворот: <input type="range" id="bmr" min="-30" max="30" step="0.5" value="' + bMain.rot + '"><span id="bmrVal">' + bMain.rot + '°</span></label>' +
-            '<label>Сдвиг колонок X: <input type="number" id="colX" step="0.5" value="' + colsOv.offsetX + '"></label>' +
-            '<label>Масштаб колонок: <input type="number" id="colS" step="0.01" min="0.3" max="2" value="' + colsOv.scale + '"></label>' +
+            '<h4>💪 ' + LPG.block2Title + '</h4>' +
+            '<label>' + LPG.x + ': <input type="number" id="bmx" step="0.5" value="' + bMain.x + '"></label>' +
+            '<label>' + LPG.y + ': <input type="number" id="bmy" step="0.5" value="' + bMain.y + '"></label>' +
+            '<label>' + LPG.width + ': <input type="number" id="bmw" step="0.01" min="0.3" max="3" value="' + bMain.w + '"></label>' +
+            '<label>' + LPG.height + ': <input type="number" id="bmh" step="0.01" min="0.3" max="3" value="' + bMain.h + '"></label>' +
+            '<label>' + LPG.rotation + ': <input type="range" id="bmr" min="-30" max="30" step="0.5" value="' + bMain.rot + '"><span id="bmrVal">' + bMain.rot + '°</span></label>' +
+            '<label>' + LPG.colShiftX + ': <input type="number" id="colX" step="0.5" value="' + colsOv.offsetX + '"></label>' +
+            '<label>' + LPG.colScale + ': <input type="number" id="colS" step="0.01" min="0.3" max="2" value="' + colsOv.scale + '"></label>' +
           '</div>' +
           '<div class="tune-group">' +
-            '<h4>🏃 Блок 3 — Разминка и кардио</h4>' +
-            '<label>X: <input type="number" id="bax" step="0.5" value="' + bAero.x + '"></label>' +
-            '<label>Y: <input type="number" id="bay" step="0.5" value="' + bAero.y + '"></label>' +
-            '<label>Ширина: <input type="number" id="baw" step="0.01" min="0.3" max="3" value="' + bAero.w + '"></label>' +
-            '<label>Высота: <input type="number" id="bah" step="0.01" min="0.3" max="3" value="' + bAero.h + '"></label>' +
-            '<label>Поворот: <input type="range" id="bar" min="-30" max="30" step="0.5" value="' + bAero.rot + '"><span id="barVal">' + bAero.rot + '°</span></label>' +
-            '<label>Сдвиг X: <input type="number" id="aeroX" step="0.5" value="' + aeroOv.offsetX + '"></label>' +
-            '<label>Сдвиг Y: <input type="number" id="aeroY" step="0.5" value="' + aeroOv.offsetY + '"></label>' +
+            '<h4>🏃 ' + LPG.block3Title + '</h4>' +
+            '<label>' + LPG.x + ': <input type="number" id="bax" step="0.5" value="' + bAero.x + '"></label>' +
+            '<label>' + LPG.y + ': <input type="number" id="bay" step="0.5" value="' + bAero.y + '"></label>' +
+            '<label>' + LPG.width + ': <input type="number" id="baw" step="0.01" min="0.3" max="3" value="' + bAero.w + '"></label>' +
+            '<label>' + LPG.height + ': <input type="number" id="bah" step="0.01" min="0.3" max="3" value="' + bAero.h + '"></label>' +
+            '<label>' + LPG.rotation + ': <input type="range" id="bar" min="-30" max="30" step="0.5" value="' + bAero.rot + '"><span id="barVal">' + bAero.rot + '°</span></label>' +
+            '<label>' + LPG.shiftX + ': <input type="number" id="aeroX" step="0.5" value="' + aeroOv.offsetX + '"></label>' +
+            '<label>' + LPG.shiftY + ': <input type="number" id="aeroY" step="0.5" value="' + aeroOv.offsetY + '"></label>' +
           '</div>' +
           '<div class="tune-group" style="flex:1.3; min-width:260px;">' +
-            '<h4>📐 Секции таблицы — строки и ширина</h4>' +
-            '<label>Ширина таблицы %: <input type="number" id="tblW" step="1" min="40" max="100" value="' + tblOv.width + '"></label>' +
-            '<label>Высота строки (мм): <input type="number" id="tblRH" step="0.1" min="3" max="10" value="' + tblOv.rowH + '"></label>' +
-            '<table><tr><th>Секция</th><th>верх</th><th>шаг</th><th>строк</th><th>ширина %</th></tr>' +
+            '<h4>📐 ' + LPG.tableSectionsTitle + '</h4>' +
+            '<label>' + LPG.tableWidth + ': <input type="number" id="tblW" step="1" min="40" max="100" value="' + tblOv.width + '"></label>' +
+            '<label>' + LPG.rowHeight + ': <input type="number" id="tblRH" step="0.1" min="3" max="10" value="' + tblOv.rowH + '"></label>' +
+            '<table><tr><th>' + LPG.section + '</th><th>' + LPG.top + '</th><th>' + LPG.step + '</th><th>' + LPG.rows + '</th><th>' + LPG.widthPct + '</th></tr>' +
             secData.map(s => '<tr><td>' + s.label + '</td>' +
               '<td><input type="number" step="0.2" id="t_' + s.id + '" value="' + s.top + '"></td>' +
               '<td><input type="number" step="0.1" id="h_' + s.id + '" value="' + s.rowH + '"></td>' +
@@ -9403,8 +9641,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
               '<td><input type="number" step="1" min="40" max="100" id="w_' + s.id + '" value="' + (ov0.sections && ov0.sections[s.id] && ov0.sections[s.id].w || 100) + '"></td>' +
               '</tr>').join('') +
             '</table>' +
-            '<div class="hint">↑ / ↓ = верх строки и шаг (мм). «Строк» применится при следующем открытии. ' +
-            '<button onclick="resetTune()" style="margin-left:6px;">↺ Сброс всего</button></div>' +
+            '<div class="hint">' + LPG.sectionsHint + ' ' +
+            '<button onclick="resetTune()" style="margin-inline-start:6px;">↺ ' + LPG.resetAll + '</button></div>' +
           '</div>' +
         '</div>' +
         '<div id="sheetWrap">' +
@@ -9824,32 +10062,13 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       img.src = '';
     }
 
-    // Helpers (shared with dashboard but defined locally to avoid coupling)
-    function avatarGradient(name) {
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      const h1 = Math.abs(hash) % 360;
-      const h2 = (h1 + 50) % 360;
-      return `linear-gradient(135deg, hsl(${h1}, 65%, 55%), hsl(${h2}, 70%, 60%))`;
-    }
-    function initials(name) {
-      if (!name) return '?';
-      const parts = name.trim().split(/\s+/);
-      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    function goalBadgeClass(goal) {
-      return {
-        hypertrophy: 'bg-primary/15 text-primary-2',
-        strength:    'bg-danger/15 text-danger',
-        fat_loss:    'bg-warning/15 text-warning',
-        endurance:   'bg-accent/15 text-accent',
-        rehab:       'bg-success/15 text-success'
-      }[goal] || 'bg-muted/15 text-muted';
-    }
+    // avatarGradient / initials / goalBadgeClass are now global (deduplication 2026-08 QA Sprint 2 #5).
+    // Previously these 3 helpers were defined identically in both dashboard and profile IIFEs
+    // ("shared with dashboard but defined locally to avoid coupling" — comment was a red flag).
+    // Now they live at the top-level scope alongside escapeHTML / setText.
 
     return { load, render, closeViewer, get clientId() { return _clientId; }, get _client() { return _client; },
-             openProgramCreator, openProgramEditor, createProgram, archiveProgram, deleteProgram, duplicateProgram, loadPrograms, startWorkoutFromProgram, openProgramDayPreview, printProgram,
+             openProgramCreator, openProgramEditor, createProgram, archiveProgram, deleteProgram, duplicateProgram, loadPrograms, startWorkoutFromProgram, openProgramDayPreview,
              pbOpenExercisePicker, pbSave, rebuildDays, renderBuilder, autoGenerateProgram, llmGenerateProgram, pbMakeEasier, pbMakeHarder, pbAutoArrange, pbMoveExercise,
              printProgram, printNutritionPlan, printOnForm, printPrivateGym, PG_LAYOUT, pgTargetRow, pgGetLayout, pgEsc, loadPrintSettings, savePrintSettings, FORM_DEFAULTS,
              get _pb() { return _pb; } };
@@ -10186,10 +10405,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       const day = String(d.getDate()).padStart(2, '0');
       return `${y}-${m}-${day}`;
     }
-    function setText(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    }
+    // setText is now global (deduplication 2026-08 QA Sprint 2 #5).
 
     function refresh() {
       return loadClientList().then(() => {
@@ -11238,18 +11454,9 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
     function setSearch(v) { _search = v; applyFilters(); }
     function setSource(v) { _source = v; applyFilters(); }
-    function setGroupFilter(v) { /* kept for compat */ }
     function refresh() { return load(); }
-    function updateDatalists() {}
 
-    function setText(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    }
-    function escHTML(s) {
-      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-    function escAttr(s) { return escHTML(s); }
+    // setText / escHTML / escAttr are now global (deduplication 2026-08 QA Sprint 2 #5) — no local copies needed.
 
     /** Extract YouTube video ID from various URL formats. */
     function extractYouTubeId(url) {
@@ -11424,7 +11631,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     }
 
     return { load, refresh, applyFilters, openCreate, openView, openEdit, closeModal,
-             saveFromForm, deleteCurrent, setSearch, setSource, setGroupFilter, updateDatalists,
+             saveFromForm, deleteCurrent, setSearch, setSource,
              toggleEditMode, renameFolder, deleteFolder, moveExercise, moveGroup,
              addRootFolder, promptAddFolder, moveItem, openFolderPicker,
              setBodyMapFilter, clearBodyMapFilter };
@@ -11755,11 +11962,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       `;
     }
 
-    function formatDuration(seconds) {
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${m}:${String(s).padStart(2, '0')}`;
-    }
+    // formatDuration is now global (deduplication 2026-08 QA Sprint 2 #5).
 
     function setFilter(v) { _filter = v; applyFilter(); }
     function refresh() { return load(); }
@@ -11842,9 +12045,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       const display = document.getElementById('rest-timer-display');
       const progress = document.getElementById('rest-timer-progress');
       if (display) {
-        const m = Math.floor(_remaining / 60);
-        const s = _remaining % 60;
-        display.textContent = `${m}:${String(s).padStart(2, '0')}`;
+        display.textContent = formatDuration(_remaining);
       }
       if (progress && _total > 0) {
         const pct = Math.max(0, (_remaining / _total) * 100);
@@ -12001,9 +12202,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         const elapsed = Math.floor((Date.now() - _workout.started_at) / 1000);
         const el = document.getElementById('live-workout-duration');
         if (el) {
-          const m = Math.floor(elapsed / 60);
-          const s = elapsed % 60;
-          el.textContent = `${m}:${String(s).padStart(2, '0')}`;
+          el.textContent = formatDuration(elapsed);
         }
       };
       update();
@@ -12657,10 +12856,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       cancel();
     }
 
-    function setText(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    }
+    // setText is now global (deduplication 2026-08 QA Sprint 2 #5).
 
     /** Save current workout as a reusable template. */
     async function saveAsTemplate() {
@@ -13365,10 +13561,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     }
 
     // Helpers
-    function setText(id, val) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = val;
-    }
+    // setText is now global (deduplication 2026-08 QA Sprint 2 #5).
 
     return { init, selectClient, selectDate, refresh, openFoodSearch, setSearchSource,
              performSearch, openPortionModal, updatePreview, addPendingToMeal,
@@ -25020,35 +25213,6 @@ async function boot() {
   }
 
   /**
-   * Pluralization helper.
-   *   RU: one (1, 21, 31…), few (2–4, 22–24…), many (5–20, 25–30…)
-   *   HE: one, two, many, other
-   *   EN: one, other
-   *
-   * Usage: tChoice('clients.count', count, { one:'1 клиент', few:'{n} клиента', many:'{n} клиентов' })
-   */
-  function tChoice(key, count, forms) {
-    const n = Math.abs(count);
-    let form;
-    if (_lang === 'ru') {
-      const mod10 = n % 10, mod100 = n % 100;
-      form = (mod10 === 1 && mod100 !== 11) ? 'one'
-           : (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) ? 'few'
-           : 'many';
-    } else if (_lang === 'he') {
-      form = (n === 1) ? 'one'
-           : (n === 2) ? 'two'
-           : (n >= 3 && n <= 10) ? 'many'
-           : 'other';
-    } else {
-      form = (n === 1) ? 'one' : 'other';
-    }
-    let str = forms[form] || forms.other || forms.one || `${count}`;
-    str = str.replace(/\{n\}/g, String(count));
-    return str;
-  }
-
-  /**
    * Walk the entire document and translate every element marked with
    *   data-i18n="key"          → sets textContent
    *   data-i18n-ph="key"       → sets placeholder
@@ -25260,6 +25424,9 @@ async function boot() {
   // This must be ready before the user can swipe back, otherwise the first
   // back gesture could exit the app without any confirmation.
   try { backTrap.init(); } catch (e) { console.warn('[backTrap init]', e); }
+  // Focus trap for modal dialogs (2026-08 QA Sprint 2 #1): moves focus to
+  // first input when modal opens, traps Tab inside, restores focus on close.
+  try { focusTrap.init(); } catch (e) { console.warn('[focusTrap init]', e); }
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', boot);
   } else {
@@ -25555,8 +25722,13 @@ async function boot() {
   <script>
   (function(){
     "use strict";
-    // Auto-backup every 5 min
-    if(typeof db!=="undefined"){setInterval(function(){try{db.all("clients").then(function(c){try{localStorage.setItem("dk_ab",JSON.stringify({t:Date.now(),c:c}))}catch(e){}})}catch(e){}},300000);}
+    // Auto-backup to localStorage REMOVED (2026-08 QA Sprint 2 #3):
+    // Was a plaintext PII leak — serialized the entire clients table (names, phones,
+    // emails, weights, injuries) to localStorage.dk_ab every 5 min, bypassing the
+    // auth module entirely. Removed in favor of the explicit "Export backup" button
+    // in Settings → Backup (which produces an encrypted JSON file the user controls).
+    // Also clear any stale dk_ab data from previous versions:
+    try { localStorage.removeItem('dk_ab'); } catch (e) {}
     // Offline banner (i18n fix 2026-08 QA #6)
     var b=document.createElement("div");b.style.cssText="position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:12px;z-index:9999;transform:translateY(-100%);transition:transform .3s";b.textContent=(typeof t==="function"?t("common.offline"):"")||"No internet";document.body.appendChild(b);
     function u(){b.style.transform=navigator.onLine?"translateY(-100%)":"translateY(0)"}
