@@ -533,10 +533,15 @@
       filter: brightness(1);
     }
     .bm-muscle:hover {
-      filter: brightness(1.4) drop-shadow(0 0 4px rgb(var(--c-primary)));
+      filter: brightness(1.5) drop-shadow(0 0 6px rgb(var(--c-primary)));
     }
     .bm-muscle.active {
-      filter: brightness(1.6) drop-shadow(0 0 6px rgb(var(--c-primary)));
+      filter: brightness(1.8) drop-shadow(0 0 8px rgb(var(--c-primary)));
+    }
+    /* Selected (clicked) muscle in workout workspace body map — full opacity highlight */
+    .bm-muscle.bm-selected {
+      fill: rgb(var(--c-accent)) !important;
+      filter: brightness(1.5) drop-shadow(0 0 6px rgb(var(--c-accent)));
     }
     .bm-muscle-label { font-size: 7px; fill: rgb(var(--c-muted)); pointer-events: none; text-anchor: middle; font-weight: 600; }
     .bm-ex-card { transition: all .12s; }
@@ -1824,7 +1829,14 @@
                 </button>
               </div>
               <div id="exercise-bodymap-panel" class="hidden mb-3 bg-surface-2 border border-border rounded-xl p-3 flex flex-col sm:flex-row gap-3 items-start">
-                <div id="exercise-bodymap-svg" class="shrink-0 mx-auto sm:mx-0" style="max-width: 140px;"></div>
+                <div class="shrink-0 flex flex-col items-center mx-auto sm:mx-0">
+                  <div class="flex gap-1 mb-1">
+                    <button id="ex-bm-view-front" class="px-2 py-1 rounded text-[10px] font-semibold transition bg-primary text-white">Front</button>
+                    <button id="ex-bm-view-back" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted">Back</button>
+                    <button id="ex-bm-view-side" class="px-2 py-1 rounded text-[10px] font-semibold transition text-muted">Side</button>
+                  </div>
+                  <div id="exercise-bodymap-svg" class="mx-auto" style="max-width: 160px;"></div>
+                </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-2">
                     <span id="exercise-bodymap-active" class="text-xs font-semibold text-muted">—</span>
@@ -5497,6 +5509,20 @@
     let _current = null;
 
     function show(name) {
+      // Auto-disable archive mode when leaving exercises or food screen (Archive feature)
+      if (_current !== name) {
+        // Reset exercise archive mode
+        if (typeof screens !== 'undefined' && screens.exercises && screens.exercises._archiveMode) {
+          screens.exercises.toggleArchiveMode();
+        }
+        // Reset food archive mode
+        if (typeof foodDatabase !== 'undefined' && foodDatabase._archiveMode) {
+          foodDatabase.toggleArchiveMode();
+        }
+        // Hide body map panel if visible
+        const bmPanel = document.getElementById('exercise-bodymap-panel');
+        if (bmPanel) bmPanel.classList.add('hidden');
+      }
       // Close ALL modals when navigating (prevents stuck overlays blocking clicks)
       ['client-modal', 'exercise-modal', 'exercise-picker-modal', 'food-search-modal',
        'food-portion-modal', 'custom-food-modal', 'targets-modal', 'workout-detail-modal',
@@ -13883,8 +13909,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
         </linearGradient>
         <radialGradient id="muscleG" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
-          <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
+          <stop offset="0%" stop-color="rgb(var(--c-primary))" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="rgb(var(--c-primary-2))" stop-opacity="0.35"/>
         </radialGradient>
       </defs>
       <!-- Head -->
@@ -13892,10 +13918,10 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Neck -->
       <path d="M70,48 Q80,52 90,48 L88,62 Q80,64 72,62 Z" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Neck (Sternocleidomastoid) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M72,52 Q76,58 78,62 L74,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M88,52 Q84,58 82,62 L86,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M72,52 Q76,58 78,62 L74,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M88,52 Q84,58 82,62 L86,62 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Upper Trapezius (visible from front) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M44,62 Q80,54 116,62 L106,72 Q80,68 54,72 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M44,62 Q80,54 116,62 L106,72 Q80,68 54,72 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Front Deltoid -->
       <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M42,68 Q34,72 36,86 Q40,90 48,86 Q44,76 44,68 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Front Deltoid -->
@@ -13921,8 +13947,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Right Bicep -->
       <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Biceps" d="M126,90 Q132,96 130,112 Q126,118 118,114 Q116,102 118,92 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Left Brachialis (between bicep and tricep) -->
-      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M28,100 Q26,108 28,116 L32,116 Q30,108 30,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M132,100 Q134,108 132,116 L128,116 Q130,108 130,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M28,100 Q26,108 28,116 L32,116 Q30,108 30,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="elbow_flexors" data-subgroup="Brachialis" d="M132,100 Q134,108 132,116 L128,116 Q130,108 130,100 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Forearm (flexors) -->
       <path class="bm-muscle" data-group="forearms" data-subgroup="Wrist Curls" d="M24,118 Q18,124 20,142 Q24,148 30,144 Q32,128 30,118 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Forearm -->
@@ -13938,23 +13964,23 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <line x1="58" y1="124" x2="102" y2="124" stroke="rgb(var(--c-border))" stroke-width="0.4" opacity="0.25"/>
       <line x1="58" y1="140" x2="102" y2="140" stroke="rgb(var(--c-border))" stroke-width="0.4" opacity="0.25"/>
       <!-- Left Oblique -->
-      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M52,108 Q48,124 52,156 L58,156 L58,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M52,108 Q48,124 52,156 L58,156 L58,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Right Oblique -->
-      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M108,108 Q112,124 108,156 L102,156 L102,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M108,108 Q112,124 108,156 L102,156 L102,108 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Serratus Anterior (left, finger-like muscles on side of ribs) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M48,110 L52,118 M48,118 L52,126 M48,126 L52,134" stroke="url(#muscleG)" stroke-width="2" opacity="0.6" fill="none"/>
-      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M112,110 L108,118 M112,118 L108,126 M112,126 L108,134" stroke="url(#muscleG)" stroke-width="2" opacity="0.6" fill="none"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M48,110 L52,118 M48,118 L52,126 M48,126 L52,134" stroke="url(#muscleG)" stroke-width="2" fill="none"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M112,110 L108,118 M112,118 L108,126 M112,126 L108,134" stroke="url(#muscleG)" stroke-width="2" fill="none"/>
       <!-- Left Quad (Rectus Femoris + Vastus Lateralis) -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M56,158 Q50,164 52,196 Q56,220 64,222 Q68,220 66,196 Q66,168 64,158 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Quad -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M104,158 Q110,164 108,196 Q104,220 96,222 Q92,220 94,196 Q94,168 96,158 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Left Vastus Lateralis (outer quad) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M50,170 Q48,190 52,210 L56,210 Q54,190 54,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M110,170 Q112,190 108,210 L104,210 Q106,190 106,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M50,170 Q48,190 52,210 L56,210 Q54,190 54,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M110,170 Q112,190 108,210 L104,210 Q106,190 106,170 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Adductor (inner thigh) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M66,162 Q68,180 66,206 Q64,214 70,214 Q72,200 72,176 Q72,166 70,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M66,162 Q68,180 66,206 Q64,214 70,214 Q72,200 72,176 Q72,166 70,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Right Adductor -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M94,162 Q92,180 94,206 Q96,214 90,214 Q88,200 88,176 Q88,166 90,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Adductors" d="M94,162 Q92,180 94,206 Q96,214 90,214 Q88,200 88,176 Q88,166 90,160 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Tibialis Anterior (shin) -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M58,228 Q54,232 56,256 Q60,262 64,258 Q62,240 62,228 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Tibialis -->
@@ -13963,8 +13989,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <ellipse cx="60" cy="270" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <ellipse cx="100" cy="270" rx="10" ry="6" fill="url(#skinG)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Hip Flexors (lower abs area) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M60,156 L76,156 L76,164 Q68,166 60,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M100,156 L84,156 L84,164 Q92,166 100,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M60,156 L76,156 L76,164 Q68,166 60,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M100,156 L84,156 L84,164 Q92,166 100,164 Z" fill="url(#muscleG)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
     </svg>`;
 
     const SVG_BACK = `<svg viewBox="0 0 160 360" class="bm-body-svg" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
@@ -13974,8 +14000,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
         </linearGradient>
         <radialGradient id="muscleGB" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
-          <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
+          <stop offset="0%" stop-color="rgb(var(--c-primary))" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="rgb(var(--c-primary-2))" stop-opacity="0.35"/>
         </radialGradient>
       </defs>
       <!-- Head (back) -->
@@ -13985,9 +14011,9 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Upper Trapezius (neck to shoulders) -->
       <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M44,62 Q80,52 116,62 L108,76 Q80,70 52,76 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Middle Trapezius (between shoulder blades) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M52,80 Q80,76 108,80 L100,96 Q80,92 60,96 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M52,80 Q80,76 108,80 L100,96 Q80,92 60,96 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Lower Trapezius (V-shape to lower back) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M60,98 Q80,94 100,98 L84,118 Q80,116 76,118 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M60,98 Q80,94 100,98 L84,118 Q80,116 76,118 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Rear Deltoid -->
       <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M42,68 Q34,72 36,86 Q40,90 48,86 Q44,76 44,68 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Rear Deltoid -->
@@ -13997,10 +14023,10 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Right Lat -->
       <path class="bm-muscle" data-group="back" data-subgroup="Lats" d="M116,82 Q80,76 84,98 L88,128 Q100,130 110,118 Q118,100 116,82 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Rhomboids (between shoulder blades, hidden under trap) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Middle Back" d="M62,84 Q80,82 98,84 L92,98 Q80,96 68,98 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Middle Back" d="M62,84 Q80,82 98,84 L92,98 Q80,96 68,98 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Infraspinatus/Teres (rotator cuff area) -->
-      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M46,86 Q42,94 46,102 L54,100 Q52,92 52,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
-      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M114,86 Q118,94 114,102 L106,100 Q108,92 108,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M46,86 Q42,94 46,102 L54,100 Q52,92 52,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rotator Cuff" d="M114,86 Q118,94 114,102 L106,100 Q108,92 108,86 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Spine line -->
       <line x1="80" y1="82" x2="80" y2="132" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.3"/>
       <!-- Left Tricep (long head) -->
@@ -14013,8 +14039,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Lower Back (Erector Spinae) -->
       <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M58,128 L102,128 L100,152 Q80,156 60,152 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Left Erector Spinae (column along spine) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M68,130 Q66,144 70,156 L74,156 Q72,144 72,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
-      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,130 Q94,144 90,156 L86,156 Q88,144 88,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M68,130 Q66,144 70,156 L74,156 Q72,144 72,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,130 Q94,144 90,156 L86,156 Q88,144 88,130 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Gluteus Maximus -->
       <ellipse class="bm-muscle" data-group="legs" data-subgroup="Glutes" cx="62" cy="166" rx="18" ry="16" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Gluteus Maximus -->
@@ -14026,15 +14052,15 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Right Hamstring -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M106,184 Q114,190 112,216 Q108,236 100,238 Q94,236 96,216 Q96,194 98,184 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Left Semitendinosus (inner hamstring) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M64,186 Q66,210 62,232 L66,232 Q70,210 68,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M96,186 Q94,210 98,232 L94,232 Q90,210 92,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M64,186 Q66,210 62,232 L66,232 Q70,210 68,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hamstrings" d="M96,186 Q94,210 98,232 L94,232 Q90,210 92,186 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Left Calf (Gastrocnemius) -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M54,242 Q46,248 48,272 Q52,288 60,290 Q66,288 64,272 Q62,250 62,242 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Right Calf -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M106,242 Q114,248 112,272 Q108,288 100,290 Q94,288 96,272 Q98,250 98,242 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Soleus (deeper calf muscle, lower) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M52,272 Q50,282 54,288 L60,288 Q58,280 58,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
-      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M108,272 Q110,282 106,288 L100,288 Q102,280 102,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.7"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M52,272 Q50,282 54,288 L60,288 Q58,280 58,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Calves" d="M108,272 Q110,282 106,288 L100,288 Q102,280 102,272 Z" fill="url(#muscleGB)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Feet (back) -->
       <ellipse cx="58" cy="298" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <ellipse cx="102" cy="298" rx="10" ry="6" fill="url(#skinGB)" stroke="rgb(var(--c-border))" stroke-width="1"/>
@@ -14048,8 +14074,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.4"/>
         </linearGradient>
         <radialGradient id="muscleGS" cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stop-color="rgb(var(--c-surface-2))" stop-opacity="0.95"/>
-          <stop offset="100%" stop-color="rgb(var(--c-border))" stop-opacity="0.3"/>
+          <stop offset="0%" stop-color="rgb(var(--c-primary))" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="rgb(var(--c-primary-2))" stop-opacity="0.35"/>
         </radialGradient>
       </defs>
       <!-- Head (profile, facing left) -->
@@ -14059,15 +14085,15 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <!-- Neck -->
       <path d="M56,56 Q62,60 70,56 L68,68 Q62,70 56,68 Z" fill="url(#skinGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Sternocleidomastoid (neck muscle) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M58,58 Q60,66 64,68 L66,68 Q62,62 60,58 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.8"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Neck" d="M58,58 Q60,66 64,68 L66,68 Q62,62 60,58 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Upper Trapezius (side view — bulge between neck and shoulder) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M68,58 Q82,62 92,72 L86,82 Q76,76 68,72 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Trapezius" d="M68,58 Q82,62 92,72 L86,82 Q76,76 68,72 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Side Deltoid (the round shoulder muscle visible from side) -->
       <ellipse class="bm-muscle" data-group="shoulders" data-subgroup="Middle" cx="92" cy="82" rx="12" ry="14" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Front Deltoid (front edge) -->
-      <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M84,76 Q78,80 80,92 Q86,94 90,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Front" d="M84,76 Q78,80 80,92 Q86,94 90,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Rear Deltoid (back edge) -->
-      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M100,76 Q106,80 104,92 Q98,94 94,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="shoulders" data-subgroup="Rear" d="M100,76 Q106,80 104,92 Q98,94 94,90 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Pec (chest, side view — front of upper torso) -->
       <path class="bm-muscle" data-group="chest" data-subgroup="Upper" d="M76,92 Q72,98 76,108 L84,106 Q82,98 82,92 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <path class="bm-muscle" data-group="chest" data-subgroup="Middle" d="M76,108 Q74,116 78,124 L86,122 Q82,114 82,108 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
@@ -14084,13 +14110,13 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       <path class="bm-muscle" data-group="abdominals" data-subgroup="Upper" d="M78,134 Q74,140 76,148 L84,148 Q82,140 82,134 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <path class="bm-muscle" data-group="abdominals" data-subgroup="Lower" d="M76,148 Q74,156 78,164 L86,162 Q82,154 84,148 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Oblique (side of abs) -->
-      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M86,134 Q92,142 92,158 L86,158 Q86,144 84,134 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="abdominals" data-subgroup="Obliques" d="M86,134 Q92,142 92,158 L86,158 Q86,144 84,134 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Lower Back (side view — lower curve) -->
-      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,148 Q98,154 98,164 L92,164 Q90,156 90,148 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="back" data-subgroup="Lower Back" d="M92,148 Q98,154 98,164 L92,164 Q90,156 90,148 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Glute (side view — buttock bulge) -->
       <ellipse class="bm-muscle" data-group="legs" data-subgroup="Glutes" cx="98" cy="174" rx="14" ry="14" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Hip Flexor (front of hip) -->
-      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M78,164 Q74,172 78,180 L86,178 Q82,170 84,164 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5" opacity="0.85"/>
+      <path class="bm-muscle" data-group="legs" data-subgroup="Hip Flexors" d="M78,164 Q74,172 78,180 L86,178 Q82,170 84,164 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="0.5"/>
       <!-- Quad (front of thigh) -->
       <path class="bm-muscle" data-group="legs" data-subgroup="Quadriceps" d="M82,180 Q74,190 76,220 Q82,232 90,228 Q92,210 90,184 Z" fill="url(#muscleGS)" stroke="rgb(var(--c-border))" stroke-width="1"/>
       <!-- Hamstring (back of thigh) -->
@@ -21576,46 +21602,63 @@ async function boot() {
     const bmSvgContainer = document.getElementById('exercise-bodymap-svg');
     const bmActiveLabel = document.getElementById('exercise-bodymap-active');
     const bmClearBtn = document.getElementById('exercise-bodymap-clear');
-    let _bmPanelInited = false;
+    let _bmCurrentView = 'front';
+
+    function _renderBmSvg(view) {
+      if (!bmSvgContainer) return;
+      _bmCurrentView = view;
+      const svgStr = view === 'front' ? (window.BM_SVG_FRONT || '') :
+                     view === 'back'  ? (window.BM_SVG_BACK  || '') :
+                                        (window.BM_SVG_SIDE  || '');
+      bmSvgContainer.innerHTML = svgStr;
+      const svg = bmSvgContainer.querySelector('svg');
+      if (svg) { svg.style.maxWidth = '160px'; svg.style.height = 'auto'; }
+      // Wire muscle clicks
+      bmSvgContainer.querySelectorAll('.bm-muscle').forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', () => {
+          const group = el.getAttribute('data-group');
+          const subgroup = el.getAttribute('data-subgroup') || '';
+          if (group && screens.exercises && screens.exercises.setBodyMapFilter) {
+            screens.exercises.setBodyMapFilter(group, subgroup);
+            if (bmActiveLabel) {
+              const gLabel = (typeof groupName === 'function') ? groupName(group) : group;
+              bmActiveLabel.textContent = gLabel + (subgroup ? ' / ' + ((typeof subgroupName === 'function') ? subgroupName(subgroup) : subgroup) : '');
+            }
+            // Highlight clicked muscle, dim others
+            bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.classList.remove('bm-selected'));
+            el.classList.add('bm-selected');
+          }
+        });
+      });
+      // Update view tab styling
+      ['front', 'back', 'side'].forEach(v => {
+        const btn = document.getElementById('ex-bm-view-' + v);
+        if (btn) {
+          if (v === view) { btn.classList.add('bg-primary','text-white'); btn.classList.remove('text-muted'); }
+          else { btn.classList.remove('bg-primary','text-white'); btn.classList.add('text-muted'); }
+        }
+      });
+    }
+
     if (bmToggle) bmToggle.addEventListener('click', () => {
       if (!bmPanel) return;
       bmPanel.classList.toggle('hidden');
-      if (!bmPanel.classList.contains('hidden') && !_bmPanelInited && bmSvgContainer) {
-        // Render front body SVG and wire muscle click → setBodyMapFilter
-        _bmPanelInited = true;
-        if (window.BM_SVG_FRONT) {
-          bmSvgContainer.innerHTML = window.BM_SVG_FRONT;
-          // Scale down the SVG
-          const svg = bmSvgContainer.querySelector('svg');
-          if (svg) { svg.style.maxWidth = '140px'; svg.style.height = 'auto'; }
-          // Wire each clickable muscle zone
-          bmSvgContainer.querySelectorAll('.bm-muscle').forEach(el => {
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', () => {
-              const group = el.getAttribute('data-group');
-              const subgroup = el.getAttribute('data-subgroup') || '';
-              if (group && screens.exercises && screens.exercises.setBodyMapFilter) {
-                screens.exercises.setBodyMapFilter(group, subgroup);
-                if (bmActiveLabel) {
-                  const lang = currentLang();
-                  const gLabel = (typeof groupName === 'function') ? groupName(group) : group;
-                  bmActiveLabel.textContent = gLabel + (subgroup ? ' / ' + ((typeof subgroupName === 'function') ? subgroupName(subgroup) : subgroup) : '');
-                }
-                // Visual feedback: highlight clicked muscle
-                bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.style.opacity = '0.4');
-                el.style.opacity = '1';
-              }
-            });
-          });
-        }
+      if (!bmPanel.classList.contains('hidden')) {
+        _renderBmSvg(_bmCurrentView);
       }
+    });
+    // View tab wiring
+    ['front', 'back', 'side'].forEach(v => {
+      const btn = document.getElementById('ex-bm-view-' + v);
+      if (btn) btn.addEventListener('click', () => _renderBmSvg(v));
     });
     if (bmClearBtn) bmClearBtn.addEventListener('click', () => {
       if (screens.exercises && screens.exercises.clearBodyMapFilter) {
         screens.exercises.clearBodyMapFilter();
       }
       if (bmActiveLabel) bmActiveLabel.textContent = '—';
-      if (bmSvgContainer) bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.style.opacity = '1');
+      if (bmSvgContainer) bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.classList.remove('bm-selected'));
     });
 
     // Body Map Picker wiring
