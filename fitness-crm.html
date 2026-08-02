@@ -6290,8 +6290,11 @@
     /** Build HTML for a single client card. */
     function cardHTML(c) {
       const name = c.full_name || c.name || '?';
-      const goalKey = c.goal ? 'client.goal' + c.goal.charAt(0).toUpperCase() + c.goal.slice(1) : null;
-      const goalLabel = goalKey ? t(goalKey) : '';
+      // Bug fix (2026-08 QA #5): c.goal = "fat_loss" produced key "client.goalFat_loss" (with underscore)
+      // which doesn't match dict key "client.goalFatLoss" (camelCase). Strip underscores first.
+      const goalCamel = c.goal ? c.goal.split('_').map((p, i) => i === 0 ? p.charAt(0).toUpperCase() + p.slice(1) : p.charAt(0).toUpperCase() + p.slice(1)).join('') : null;
+      const goalKey = goalCamel ? 'client.goal' + goalCamel : null;
+      const goalLabel = goalKey ? (t(goalKey) || c.goal) : '';
       const lastActive = c.last_active ? fmtRelative(c.last_active) : t('client.lastActive') + ' —';
       const stats = [
         c.age ? c.age + 'y' : null,
@@ -6758,8 +6761,10 @@
 
     /** Hero card with avatar + key stats. */
     function heroCard(c, name) {
-      const goalKey = c.goal ? 'client.goal' + c.goal.charAt(0).toUpperCase() + c.goal.slice(1) : null;
-      const goalLabel = goalKey ? t(goalKey) : '';
+      // Bug fix (2026-08 QA #5): strip underscores from goal before building i18n key
+      const goalCamel = c.goal ? c.goal.split('_').map((p, i) => i === 0 ? p.charAt(0).toUpperCase() + p.slice(1) : p.charAt(0).toUpperCase() + p.slice(1)).join('') : null;
+      const goalKey = goalCamel ? 'client.goal' + goalCamel : null;
+      const goalLabel = goalKey ? (t(goalKey) || c.goal) : '';
       const lastActive = c.last_active ? fmtRelative(c.last_active) : '—';
       const since = c.created_at ? fmtDate(c.created_at) : '—';
       const stats = [];
@@ -7669,9 +7674,12 @@
       document.getElementById('pb-split').value = pbSplit;
 
       // Generate program name
-      const goalLabel = t('client.goal' + goal.charAt(0).toUpperCase() + goal.slice(1)) || goal;
-      const levelLabel = t('client.level' + (level.charAt(0).toUpperCase() + level.slice(1))) || level;
-      const programName = `${client.full_name || 'Client'} — ${goalLabel} (${levelLabel})`;
+      // Bug fix (2026-08 QA #5): strip underscores from goal/level before building i18n key
+      const goalCamel = goal.split('_').map((p, i) => i === 0 ? p.charAt(0).toUpperCase() + p.slice(1) : p.charAt(0).toUpperCase() + p.slice(1)).join('');
+      const levelCamel = level.split('_').map((p, i) => i === 0 ? p.charAt(0).toUpperCase() + p.slice(1) : p.charAt(0).toUpperCase() + p.slice(1)).join('');
+      const goalLabel = t('client.goal' + goalCamel) || goal;
+      const levelLabel = t('client.level' + levelCamel) || level;
+      const programName = `${client.full_name || t('clients.defaultName') || 'Client'} — ${goalLabel} (${levelLabel})`;
       document.getElementById('pb-name').value = programName;
 
       renderBuilder();
@@ -8891,7 +8899,17 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
           name:     { x: 27, w: 145, fontSize: 8 },  // exercise name (27..172mm)
           // Machine number — skip (user fills manually)
           // Muscle group — right side
-          muscle:   { x: 188, w: 15, fontSize: 7 }
+          muscle:   { x: 188, w: 15, fontSize: 7 },
+          // === Added 2026-08 (QA audit fix #4) ===
+          // These keys were referenced by loadPrintCalibration() but were missing,
+          // causing "Cannot read properties of undefined (reading 'x')" crash on every boot.
+          // Values from HTML inputs at lines 3136-3142 (default value attributes).
+          num:      { x: 5,   w: 4,  fontSize: 8 },   // machine number column
+          set:      { x: 70,  w: 4,  fontSize: 8 },   // alt name for 'sets' used by some HTML inputs
+          setNum:   { x: 70,  w: 4,  fontSize: 8 },   // alias for set (used by some HTML inputs)
+          weight:   { x: 80,  w: 10, fontSize: 8 },   // combined weight column (multi-set)
+          wtReps:   { x: 113, w: 10, fontSize: 8 },   // weight×reps combined column
+          notes:    { x: 134, w: 30, fontSize: 7 }    // notes column
         }
       },
       // Muscle sections — EXACT positions from pixel analysis
@@ -17059,12 +17077,24 @@ Select foods for each meal. Output as JSON only.`;
 
     const gifSlot = document.getElementById('exercise-gif-slot');
     if (gifSlot) {
-      if (imgs.length >= 2) gifSlot.innerHTML = '<div class="ex-anim-container"><img src="' + imgs[0] + '" alt="" class="ex-anim-frame-1" loading="lazy" /><img src="' + imgs[1] + '" alt="" class="ex-anim-frame-2" loading="lazy" /><div class="ex-anim-badge">ANIM</div></div>';
-      else if (imgs.length === 1) gifSlot.innerHTML = '<img src="' + imgs[0] + '" alt="" class="w-full h-full object-contain bg-surface-2" loading="lazy" />';
-      else gifSlot.innerHTML = '<div class="text-center text-muted"><p class="text-xs">' + t('exercise.noImage') + '</p></div>';
+      // XSS fix (2026-08): escape all image URLs via escapeAttr before interpolating into innerHTML.
+      // Previous version concatenated raw imgs[0] which could inject attributes via " onerror="alert(1)".
+      if (imgs.length >= 2) gifSlot.innerHTML = '<div class="ex-anim-container"><img src="' + escapeAttr(imgs[0]) + '" alt="" class="ex-anim-frame-1" loading="lazy" /><img src="' + escapeAttr(imgs[1]) + '" alt="" class="ex-anim-frame-2" loading="lazy" /><div class="ex-anim-badge">ANIM</div></div>';
+      else if (imgs.length === 1) gifSlot.innerHTML = '<img src="' + escapeAttr(imgs[0]) + '" alt="" class="w-full h-full object-contain bg-surface-2" loading="lazy" />';
+      else gifSlot.innerHTML = '<div class="text-center text-muted"><p class="text-xs">' + escapeHTML(t('exercise.noImage') || 'No image') + '</p></div>';
     }
     const techEl = document.getElementById('exercise-technique');
-    if (techEl) techEl.innerHTML = technique ? technique.split('|').map(s => '<p class="mb-1">' + s.trim() + '</p>').join('') : '—';
+    if (techEl) {
+      // XSS fix (2026-08): escape each technique step via escapeHTML.
+      // Also unified delimiter to ' | ' to match the second copy at line 11094.
+      if (technique) {
+        // Support both ' | ' (preferred) and '|' (legacy) delimiters
+        const steps = technique.indexOf(' | ') !== -1 ? technique.split(' | ') : technique.split('|');
+        techEl.innerHTML = steps.map(s => '<p class="mb-1">• ' + escapeHTML(s.trim()) + '</p>').join('');
+      } else {
+        techEl.textContent = '—';
+      }
+    }
     const gBadge = document.getElementById('badge-group'); if (gBadge) gBadge.textContent = group;
     const sgBadge = document.getElementById('badge-subgroup'); if (sgBadge) sgBadge.textContent = typeof subgroupName === 'function' ? subgroupName(ex.subgroup_en || ex.sE || '') : '';
     const eqBadge = document.getElementById('badge-equipment'); if (eqBadge) eqBadge.textContent = ex['equipment_' + lang] || ex.equipment_en || ex.eE || '';
@@ -20832,24 +20862,31 @@ async function boot() {
     async function loadPrintCalibration() {
       try {
         const settings = await screens.profile.loadPrintSettings();
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-        set('print-offset-x', settings.offsetX || 0);
-        set('print-offset-y', settings.offsetY || 0);
-        set('print-ex-start-y', settings.exerciseTable.startY);
-        set('print-ex-row-h', settings.exerciseTable.rowHeight);
-        set('print-col-num-x', settings.exerciseTable.columns.num.x);
-        set('print-col-name-x', settings.exerciseTable.columns.name.x);
-        set('print-col-set-x', settings.exerciseTable.columns.setNum.x);
-        set('print-col-wt-x', settings.exerciseTable.columns.weight.x);
-        set('print-col-reps-x', settings.exerciseTable.columns.reps.x);
-        set('print-col-wr-x', settings.exerciseTable.columns.wtReps.x);
-        set('print-col-notes-x', settings.exerciseTable.columns.notes.x);
-        set('print-col-muscle-x', settings.exerciseTable.columns.muscle.x);
-        set('print-ae-start-y', settings.aerobic.startY);
-        set('print-ae-row-h', settings.aerobic.rowHeight);
-        set('print-hdr-client-x', settings.clientName.x);
-        set('print-hdr-client-y', settings.clientName.y);
-        set('print-hdr-date-y', settings.date.y);
+        // Safety guard (2026-08 QA fix #4): use optional chaining + nullish coalescing so
+        // missing keys in saved calibration data won't crash with "Cannot read properties of undefined".
+        // Also falls back to the HTML input's default value if both settings and FORM_DEFAULTS lack the key.
+        const cols = (settings.exerciseTable && settings.exerciseTable.columns) || {};
+        const set = (id, val) => {
+          const el = document.getElementById(id);
+          if (el && val != null && !isNaN(val)) el.value = val;
+        };
+        set('print-offset-x', settings.offsetX ?? 0);
+        set('print-offset-y', settings.offsetY ?? 0);
+        set('print-ex-start-y', (settings.exerciseTable && settings.exerciseTable.startY) ?? '');
+        set('print-ex-row-h', (settings.exerciseTable && settings.exerciseTable.rowHeight) ?? '');
+        set('print-col-num-x', (cols.num && cols.num.x) ?? '');
+        set('print-col-name-x', (cols.name && cols.name.x) ?? '');
+        set('print-col-set-x', (cols.setNum && cols.setNum.x) ?? (cols.set && cols.set.x) ?? '');
+        set('print-col-wt-x', (cols.weight && cols.weight.x) ?? '');
+        set('print-col-reps-x', (cols.reps && cols.reps.x) ?? '');
+        set('print-col-wr-x', (cols.wtReps && cols.wtReps.x) ?? '');
+        set('print-col-notes-x', (cols.notes && cols.notes.x) ?? '');
+        set('print-col-muscle-x', (cols.muscle && cols.muscle.x) ?? '');
+        set('print-ae-start-y', (settings.aerobic && settings.aerobic.startY) ?? '');
+        set('print-ae-row-h', (settings.aerobic && settings.aerobic.rowHeight) ?? '');
+        set('print-hdr-client-x', (settings.clientName && settings.clientName.x) ?? '');
+        set('print-hdr-client-y', (settings.clientName && settings.clientName.y) ?? '');
+        set('print-hdr-date-y', (settings.date && settings.date.y) ?? '');
       } catch (e) { console.warn('[print-cal] load failed:', e); }
     }
     async function savePrintCalibration() {
@@ -21499,7 +21536,9 @@ async function boot() {
         moveExercise: 'Move exercise',
         removeExercise: 'Remove exercise',
         removeSet: 'Remove set',
-        view: 'View'
+        view: 'View',
+        close: 'Close',
+        back: 'Back'
       },
       app: {
         title: 'David King Gym',
@@ -21567,6 +21606,25 @@ async function boot() {
         months: 'months',
         workoutProgram: 'Workout Program',
         saveProgram: 'Save program',
+        // Auto-arrange day (Tier 2 #2)
+        autoArrange: 'Auto-arrange',
+        autoArrangeHint: 'Reorder exercises automatically',
+        autoArrangeTitle: 'Auto-arrange day',
+        autoArrangeSubtitle: 'Pick a strategy to reorder exercises in this day',
+        autoArrangedToast: 'Arranged',
+        exercisesMoved: 'moved',
+        exerciseMoved: 'Exercise moved',
+        needTwoExercises: 'Need at least 2 exercises to arrange',
+        dragToReorder: 'Drag to reorder',
+        strategyCompoundFirst: 'Compound → Isolation',
+        strategyCompoundFirstDesc: 'Multi-joint first (squat, bench, deadlift), then single-joint (curls, extensions)',
+        strategyPushPullLegs: 'Push → Pull → Legs',
+        strategyPushPullLegsDesc: 'Chest/shoulders/triceps first, then back/biceps, then legs/core last',
+        strategyLargeSmall: 'Large → Small muscle',
+        strategyLargeSmallDesc: 'Legs/back/chest first, then shoulders/arms, then forearms/calves/core last',
+        noData: 'No program data',
+        popupBlocked: 'Pop-up blocked — allow pop-ups for this site to print',
+        active: 'Active',
         quickPick: 'Exercise Picker',
         saveAsTemplate: 'Template',
         templateNamePrompt: 'Template name?',
@@ -21720,6 +21778,8 @@ async function boot() {
         goalFatLoss: 'Fat loss',
         goalEndurance: 'Endurance',
         goalRehab: 'Rehabilitation',
+        sexMale: 'Male',
+        sexFemale: 'Female',
         injuries: 'Injuries / limitations',
         injuriesPlaceholder: 'e.g. lumbar hernia, ACL reconstruction, shoulder impingement',
         equipment: 'Available equipment',
@@ -21873,10 +21933,12 @@ async function boot() {
         addSet: 'Add set',
         removeSet: 'Remove set',
         set: 'Set',
+        exercise: 'Exercise',
         prev: 'Previous',
         weight: 'Weight',
         reps: 'Reps',
         rpe: 'Effort (RPE)',
+        effortScale: 'RPE',
         done: 'Done',
         rest: 'Rest',
         restComplete: 'Rest complete!',
@@ -21989,6 +22051,10 @@ async function boot() {
         noTechnique: 'No technique description yet. Click edit to add one.',
         sourceMuscleMotion: 'Muscle Motion',
         sourcePrivateGym: 'Private Gym',
+        sourceBurnfit: 'Burnfit',
+        bodyMap: 'Body map',
+        groupCompoundIsolation: 'Compound/Isolation',
+        groupFlatList: 'Flat list',
         video: 'Video',
         searchOnYouTube: 'Search on YouTube',
         videoUrl: 'Video URL (YouTube)',
@@ -22249,6 +22315,9 @@ async function boot() {
         polyunsaturatedFat: 'Polyunsaturated',
         omega3: 'Omega-3',
         omega6: 'Omega-6',
+        omega9: 'Omega-9',
+        aminoAcids: 'Amino Acids',
+        essentialAminoAcids: 'Essential Amino Acids',
       },
       food: {
         title: 'Food database',
@@ -22482,6 +22551,9 @@ async function boot() {
         comingSoon: 'Soon',
         select: 'Select',
         errorPrefix: 'Error: ',
+        offline: 'No internet',
+        installApp: 'Install app',
+        noData: 'No data',
       },
       settings: {
         title: 'Settings',
@@ -22584,6 +22656,9 @@ async function boot() {
         exportDone: 'Backup exported ({n} records)',
         importTitle: 'Import backup',
         importConfirm: 'Importing will replace all current data. Continue?',
+        gdriveRestoreConfirm: 'Restore data from Google Drive? Current data will be replaced.',
+        gdriveNotConfigured: 'Google Drive is not configured. See code comment.',
+        importedAt: 'Imported',
         importDone: 'Backup imported successfully',
         importError: 'Import failed: invalid file',
         fileName: 'fitness-crm-backup',
@@ -22621,7 +22696,9 @@ async function boot() {
         moveExercise: 'Переместить упражнение',
         removeExercise: 'Удалить упражнение',
         removeSet: 'Удалить подход',
-        view: 'Просмотр'
+        view: 'Просмотр',
+        close: 'Закрыть',
+        back: 'Назад'
       },
       app: {
         title: 'David King Gym',
@@ -22689,6 +22766,25 @@ async function boot() {
         months: 'мес.',
         workoutProgram: 'Программа тренировок',
         saveProgram: 'Сохранить программу',
+        // Auto-arrange day (Tier 2 #2)
+        autoArrange: 'Авто-сортировка',
+        autoArrangeHint: 'Переупорядочить упражнения автоматически',
+        autoArrangeTitle: 'Авто-сортировка дня',
+        autoArrangeSubtitle: 'Выберите стратегию для переупорядочивания упражнений',
+        autoArrangedToast: 'Отсортировано',
+        exercisesMoved: 'перемещено',
+        exerciseMoved: 'Упражнение перемещено',
+        needTwoExercises: 'Нужно минимум 2 упражнения для сортировки',
+        dragToReorder: 'Перетащите для изменения порядка',
+        strategyCompoundFirst: 'Базовые → Изолирующие',
+        strategyCompoundFirstDesc: 'Сначала многосуставные (присед, жим, становая), затем односуставные (подъёмы, разгибания)',
+        strategyPushPullLegs: 'Жим → Тяга → Ноги',
+        strategyPushPullLegsDesc: 'Сначала грудь/плечи/трицепс, затем спина/бицепс, потом ноги/кор',
+        strategyLargeSmall: 'Большие → Малые мышцы',
+        strategyLargeSmallDesc: 'Сначала ноги/спина/грудь, затем плечи/руки, потом предплечья/икры/кор',
+        noData: 'Нет данных программы',
+        popupBlocked: 'Всплывающее окно заблокировано — разрешите всплывающие окна для печати',
+        active: 'Активна',
         quickPick: 'Выбор упражнений',
         saveAsTemplate: 'Шаблон',
         templateNamePrompt: 'Название шаблона?',
@@ -22841,6 +22937,8 @@ async function boot() {
         goalFatLoss: 'Снижение веса',
         goalEndurance: 'Выносливость',
         goalRehab: 'Реабилитация',
+        sexMale: 'Мужской',
+        sexFemale: 'Женский',
         injuries: 'Травмы / ограничения',
         injuriesPlaceholder: 'напр. грыжа поясницы, реконструкция ACL, импинджмент плеча',
         equipment: 'Доступный инвентарь',
@@ -22993,6 +23091,7 @@ async function boot() {
         addSet: 'Добавить подход',
         removeSet: 'Удалить подход',
         set: 'Подход',
+        exercise: 'Упражнение',
         prev: 'Предыдущий',
         weight: 'Вес',
         reps: 'Повторения',
@@ -23111,6 +23210,10 @@ async function boot() {
         noTechnique: 'Описание техники пока нет. Нажмите «Изменить», чтобы добавить.',
         sourceMuscleMotion: 'Muscle Motion',
         sourcePrivateGym: 'Private Gym',
+        sourceBurnfit: 'Burnfit',
+        bodyMap: 'Карта тела',
+        groupCompoundIsolation: 'Базовое/Изоляция',
+        groupFlatList: 'Список',
         video: 'Видео',
         searchOnYouTube: 'Искать на YouTube',
         videoUrl: 'URL видео (YouTube)',
@@ -23370,6 +23473,9 @@ async function boot() {
         polyunsaturatedFat: 'Полиненасыщ.',
         omega3: 'Омега-3',
         omega6: 'Омега-6',
+        omega9: 'Омега-9',
+        aminoAcids: 'Аминокислоты',
+        essentialAminoAcids: 'Незаменимые аминокислоты',
       },
       food: {
         title: 'База продуктов',
@@ -23601,6 +23707,9 @@ async function boot() {
         comingSoon: 'Скоро',
         select: 'Выбрать',
         errorPrefix: 'Ошибка: ',
+        offline: 'Нет интернета',
+        installApp: 'Установить приложение',
+        noData: 'Нет данных',
       },
       settings: {
         title: 'Настройки',
@@ -23703,6 +23812,9 @@ async function boot() {
         exportDone: 'Резервная копия создана ({n} записей)',
         importTitle: 'Импорт копии',
         importConfirm: 'Импорт заменит все текущие данные. Продолжить?',
+        gdriveRestoreConfirm: 'Восстановить данные из Google Drive? Текущие данные будут заменены.',
+        gdriveNotConfigured: 'Google Drive не настроен. См. комментарий в коде.',
+        importedAt: 'Импортировано',
         importDone: 'Импорт завершён успешно',
         importError: 'Ошибка импорта: некорректный файл',
         fileName: 'fitness-crm-backup',
@@ -23740,7 +23852,9 @@ async function boot() {
         moveExercise: 'הזז תרגיל',
         removeExercise: 'הסר תרגיל',
         removeSet: 'הסר סט',
-        view: 'צפה'
+        view: 'צפה',
+        close: 'סגור',
+        back: 'חזרה'
       },
       app: {
         title: 'David King Gym',
@@ -23808,6 +23922,25 @@ async function boot() {
         months: 'חודשים',
         workoutProgram: 'תוכנית אימון',
         saveProgram: 'שמירת תוכנית',
+        // Auto-arrange day (Tier 2 #2)
+        autoArrange: 'סידור אוטומטי',
+        autoArrangeHint: 'סדר מחדש תרגילים אוטומטית',
+        autoArrangeTitle: 'סידור אוטומטי של יום',
+        autoArrangeSubtitle: 'בחר אסטרטגיה לסידור מחדש של התרגילים ביום זה',
+        autoArrangedToast: 'סודר',
+        exercisesMoved: 'הועברו',
+        exerciseMoved: 'תרגיל הועבר',
+        needTwoExercises: 'צריך לפחות 2 תרגילים לסידור',
+        dragToReorder: 'גרור כדי לסדר מחדש',
+        strategyCompoundFirst: 'מורכבים → בידוד',
+        strategyCompoundFirstDesc: 'קודם רב-מפרקיים (סקוואט, הנפה, דדליפט), אחר כך חד-מפרקיים (כפיפות, פשיטות)',
+        strategyPushPullLegs: 'דחיפה → משיכה → רגליים',
+        strategyPushPullLegsDesc: 'קודם חזה/כתפיים/תלת ראשי, אחר כך גב/ביצפס, אחרון רגליים/בטן',
+        strategyLargeSmall: 'שרירים גדולים → קטנים',
+        strategyLargeSmallDesc: 'קודם רגליים/גב/חזה, אחר כך כתפיים/ידיים, אחרון אמות/שוקיים/בטן',
+        noData: 'אין נתוני תוכנית',
+        popupBlocked: 'חלון מוקפץ נחסם — אפשר חלונות מוקפצים לאתר זה כדי להדפיס',
+        active: 'פעילה',
         quickPick: 'בחירת תרגילים',
         saveAsTemplate: 'תבנית',
         templateNamePrompt: 'שם התבנית?',
@@ -23960,6 +24093,8 @@ async function boot() {
         goalFatLoss: 'ירידה במשקל',
         goalEndurance: 'סיבולת',
         goalRehab: 'שיקום',
+        sexMale: 'זכר',
+        sexFemale: 'נקבה',
         injuries: 'פציעות / מגבלות',
         injuriesPlaceholder: 'למשל בקע מותני, שחזור ACL, אימפינג\u2019מנט כתף',
         equipment: 'ציוד זמין',
@@ -24112,6 +24247,7 @@ async function boot() {
         addSet: 'הוספת סט',
         removeSet: 'הסרת סט',
         set: 'סט',
+        exercise: 'תרגיל',
         prev: 'קודם',
         weight: 'משקל',
         reps: 'חזרות',
@@ -24230,6 +24366,10 @@ async function boot() {
         noTechnique: 'אין תיאור טכניקה עדיין. לחץ על "עריכה" כדי להוסיף.',
         sourceMuscleMotion: 'Muscle Motion',
         sourcePrivateGym: 'Private Gym',
+        sourceBurnfit: 'Burnfit',
+        bodyMap: 'מפת גוף',
+        groupCompoundIsolation: 'בסיסי/בידוד',
+        groupFlatList: 'רשימה',
         video: 'וידאו',
         searchOnYouTube: 'חפש ב-YouTube',
         videoUrl: 'כתובת וידאו (YouTube)',
@@ -24489,6 +24629,9 @@ async function boot() {
         polyunsaturatedFat: 'רב-בלתי-רווי',
         omega3: 'אומגה-3',
         omega6: 'אומגה-6',
+        omega9: 'אומגה-9',
+        aminoAcids: 'חומצות אמינו',
+        essentialAminoAcids: 'חומצות אמינו חיוניות',
       },
       food: {
         title: 'מאגר מוצרים',
@@ -24720,6 +24863,9 @@ async function boot() {
         comingSoon: 'בקרוב',
         select: 'בחר',
         errorPrefix: 'שגיאה: ',
+        offline: 'אין אינטרנט',
+        installApp: 'התקן אפליקציה',
+        noData: 'אין נתונים',
       },
       settings: {
         title: 'הגדרות',
@@ -24822,6 +24968,9 @@ async function boot() {
         exportDone: 'הגיבוי נוצר ({n} רשומות)',
         importTitle: 'ייבוא גיבוי',
         importConfirm: 'הייבוא יחליף את כל הנתונים הנוכחיים. להמשיך?',
+        gdriveRestoreConfirm: 'לשחזר נתונים מ-Google Drive? הנתונים הנוכחיים יוחלפו.',
+        gdriveNotConfigured: 'Google Drive אינו מוגדר. ראה הערה בקוד.',
+        importedAt: 'יובאו',
         importDone: 'הייבוא הושלם בהצלחה',
         importError: 'שגיאת ייבוא: קובץ לא תקין',
         fileName: 'fitness-crm-backup',
@@ -24862,8 +25011,8 @@ async function boot() {
    */
   function t(key, vars) {
     let str = resolve(I18N[_lang], key);
-    if (str == null) str = resolve(I18N.en, key); // fallback
-    if (str == null) return key;                   // last resort
+    if (str == null) str = resolve(I18N.en, key); // fallback to English
+    if (str == null) return '';                    // missing — empty string is falsy, so `t('x') || 'fallback'` patterns activate; safe for template literals + .replace()
     if (vars && typeof str === 'string') {
       str = str.replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? vars[k] : `{${k}}`));
     }
@@ -25163,7 +25312,8 @@ async function boot() {
       if (!btn) {
         btn = document.createElement('button');
         btn.id = 'pwa-install-btn';
-        btn.innerHTML = '📥 Установить приложение';
+        // i18n fix (2026-08 QA #6): use translation if available, fall back to EN/RU
+        btn.innerHTML = '📥 ' + ((typeof t === 'function' && t('common.installApp')) || 'Install app');
         btn.style.cssText = 'position:fixed;bottom:80px;right:16px;z-index:50;background:#10b981;color:#fff;border:none;border-radius:12px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,0.4);transition:transform .15s, background .15s;';
         btn.onmouseenter = function() { btn.style.background = '#059669'; btn.style.transform = 'scale(1.05)'; };
         btn.onmouseleave = function() { btn.style.background = '#10b981'; btn.style.transform = 'scale(1)'; };
@@ -25377,13 +25527,17 @@ async function boot() {
       // Load from Google Drive
       load: async function() {
         if (!window.googleDriveBackup.isConfigured()) {
-          alert('Google Drive не настроен. См. комментарий в коде.');
+          // i18n fix (2026-08 QA #6)
+          const msg = (typeof t === 'function' && t('backup.gdriveNotConfigured')) || 'Google Drive is not configured. See code comment.';
+          alert(msg);
           return { ok: false, error: 'Not configured' };
         }
         try {
           const token = await authenticateGoogle();
           const backup = await downloadBackup(token);
-          if (!confirm('Восстановить данные из Google Drive? Текущие данные будут заменены.')) {
+          // i18n fix (2026-08 QA #6): use translation if available
+          const confirmMsg = (typeof t === 'function' && t('backup.gdriveRestoreConfirm')) || 'Restore data from Google Drive? Current data will be replaced.';
+          if (!confirm(confirmMsg)) {
             return { ok: false, error: 'Cancelled' };
           }
           await restoreBackup(backup);
@@ -25403,8 +25557,8 @@ async function boot() {
     "use strict";
     // Auto-backup every 5 min
     if(typeof db!=="undefined"){setInterval(function(){try{db.all("clients").then(function(c){try{localStorage.setItem("dk_ab",JSON.stringify({t:Date.now(),c:c}))}catch(e){}})}catch(e){}},300000);}
-    // Offline banner
-    var b=document.createElement("div");b.style.cssText="position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:12px;z-index:9999;transform:translateY(-100%);transition:transform .3s";b.textContent="Нет интернета";document.body.appendChild(b);
+    // Offline banner (i18n fix 2026-08 QA #6)
+    var b=document.createElement("div");b.style.cssText="position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:6px;font-size:12px;z-index:9999;transform:translateY(-100%);transition:transform .3s";b.textContent=(typeof t==="function"?t("common.offline"):"")||"No internet";document.body.appendChild(b);
     function u(){b.style.transform=navigator.onLine?"translateY(-100%)":"translateY(0)"}
     window.addEventListener("online",u);window.addEventListener("offline",u);
     // Esc closes modals
