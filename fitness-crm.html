@@ -1799,6 +1799,10 @@
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   <span data-i18n="exercise.editMode">Edit tree</span>
                 </button>
+                <button id="exercise-archive-btn" class="bg-surface-2 hover:bg-border/40 border border-border text-sm font-medium px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 text-muted" title="Archive">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                  <span class="hidden sm:inline">Archive</span>
+                </button>
                 <button id="exercise-add-root-folder-btn" class="hidden bg-success/15 hover:bg-success/25 text-success border border-success/30 text-sm font-medium px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5" data-i18n="exercise.newFolder">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
                   <span>New folder</span>
@@ -6406,15 +6410,27 @@
   }
 
   /** Global helper: get first image URL of an exercise by ID from cache.
-   *  Used for thumbnails in program builder + day preview. */
+   *  Used for thumbnails in program builder + day preview + program list.
+   *  Falls back to _profileExerciseCache when _pb (program builder) isn't open. */
+  let _profileExerciseCache = null;
+  let _profileExMap = null;
   function globalExImage(ex) {
     if (!ex || !ex.exercise_id) return '';
+    // Try program builder cache first
     if (typeof _pb !== 'undefined' && _pb && _pb.exerciseCache) {
       if (!_pb._exMap || _pb._exMapSize !== _pb.exerciseCache.length) {
         _pb._exMap = buildExerciseIndex(_pb.exerciseCache);
         _pb._exMapSize = _pb.exerciseCache.length;
       }
       const cached = _pb._exMap.get(ex.exercise_id);
+      if (cached) {
+        const imgs = cached.images || cached.i || [];
+        return imgs[0] || '';
+      }
+    }
+    // Fallback: profile-scoped cache (loaded by loadPrograms)
+    if (_profileExerciseCache && _profileExMap) {
+      const cached = _profileExMap.get(ex.exercise_id);
       if (cached) {
         const imgs = cached.images || cached.i || [];
         return imgs[0] || '';
@@ -7227,6 +7243,13 @@
 
     async function loadPrograms(clientId) {
       const all = await db.find('client_programs', 'by_clientId', clientId);
+      // Load exercise cache for thumbnails in program list (Fix: _pb is null here)
+      if (!_profileExerciseCache) {
+        try {
+          _profileExerciseCache = await db.all('exercise_base');
+          _profileExMap = buildExerciseIndex(_profileExerciseCache);
+        } catch (e) { console.warn('[loadPrograms] exercise cache load failed', e); }
+      }
       const actives = all.filter(p => p.status === 'active').sort((a,b) => (b.created_at||0) - (a.created_at||0));
       const archived = all.filter(p => p.status === 'archived').sort((a,b) => (b.archived_at||0) - (a.archived_at||0));
       const activeSection = document.getElementById('programs-active-section');
@@ -7266,6 +7289,13 @@
                       ${[null,0,1,2,3,4,5,6].map(d => `<option value="${d === null ? '' : d}" ${dow === d ? 'selected' : ''}>${d === null ? t('client.noDay') : t('client.' + DAY_KEYS[d])}</option>`).join('')}
                     </select>
                     <div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">${dow != null ? t('client.' + ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][dow]) : escapeHTML(day.name || 'Workout ' + (day.day_letter || (i+1)))}</div><div class="text-[11px] text-muted truncate">${exCount} ${t('exercise.exercises')}</div></div>
+                    ${(day.exercises || []).slice(0, 4).map(ex => {
+                      const img = globalExImage(ex);
+                      return img
+                        ? `<div class="w-8 h-8 rounded-lg shrink-0 overflow-hidden bg-surface-2 border border-border grid place-items-center" title="${escapeAttr(ex.name || '')}"><img src="${escapeAttr(img)}" alt="" class="w-full h-full object-contain" loading="lazy" onerror="this.style.display='none'" /></div>`
+                        : '';
+                    }).join('')}
+                    ${(day.exercises || []).length > 4 ? `<span class="text-[10px] text-muted shrink-0">+${day.exercises.length - 4}</span>` : ''}
                     <button class="text-xs font-semibold text-primary-2 hover:bg-primary/10 rounded-lg px-2.5 py-1 transition shrink-0" data-program-day="${prog.id}.${i}">${t('common.open') || 'Open'}</button>
                   </div>`;
                 }).join('')}
@@ -7693,7 +7723,7 @@
       // Previously this was fire-and-forget (.then), which meant the picker
       // sometimes opened with an empty cache and exercises couldn't be added.
       try {
-        _pb.exerciseCache = await db.all('exercise_base');
+        _pb.exerciseCache = (await db.all('exercise_base')).filter(e => !e.is_archived);  // Archive feature: exclude archived;
       } catch (e) {
         console.error('[openProgramCreator] cache load failed:', e);
         toast(t('exercise.loadFailed'), 'danger');
@@ -8934,7 +8964,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       };
       // AWAIT exercise cache load so the body map picker works immediately
       try {
-        _pb.exerciseCache = await db.all('exercise_base');
+        _pb.exerciseCache = (await db.all('exercise_base')).filter(e => !e.is_archived);  // Archive feature: exclude archived;
       } catch (e) {
         console.error('[openProgramEditor] cache load failed:', e);
       }
@@ -9454,7 +9484,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
       // Load exercise cache from IndexedDB
       let exerciseCache = [];
-      try { exerciseCache = await db.all('exercise_base'); } catch (e) {}
+      try { exerciseCache = (await db.all('exercise_base')).filter(e => !e.is_archived); } catch (e) {}
       // Sprint 3 #2: build Map index for O(1) lookups (was O(n) .find() per exercise)
       const exById = buildExerciseIndex(exerciseCache);
 
@@ -10687,6 +10717,12 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     /** Re-apply source + search filters, then build tree. */
     function applyFilters() {
       _filtered = _all.filter(e => {
+        // Archive filter: hide archived items in normal view, show only archived in archive view
+        if (_archiveMode) {
+          if (!e.is_archived) return false;
+        } else {
+          if (e.is_archived) return false;
+        }
         if (_source !== 'all' && e.source !== _source) return false;
         if (_bmGroup && (e.group_canonical || e.g) !== _bmGroup) return false;
         if (_bmSubgroup && (e.subgroup_en || e.sE || '') !== _bmSubgroup) return false;
@@ -10881,13 +10917,14 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
                 ${hasPhoto ? `<img src="${escAttr(e.images[0])}" alt="" class="w-full h-full object-cover" loading="lazy" />` : `<svg class="w-3.5 h-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>`}
               </div>
               <div class="flex-1 min-w-0">
-                <div class="text-sm font-medium truncate">${escHTML(name)}</div>
+                <div class="text-sm font-medium truncate ${_archiveMode ? 'opacity-60' : ''}">${escHTML(name)}</div>
               </div>
-              ${hasVideo ? `<svg class="w-3.5 h-3.5 text-danger shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>` : ''}
-              <button class="w-6 h-6 grid place-items-center rounded hover:bg-primary/15 hover:text-primary-2 text-muted transition shrink-0 ex-edit-pencil-btn" data-edit-exercise="${escAttr(e.id)}" title="${t('aria.editExercise')}" type="button">
+              ${_archiveMode ? `<button class="text-[10px] font-semibold text-success hover:bg-success/10 rounded px-2 py-1 transition shrink-0" data-restore-exercise="${escAttr(e.id)}" onclick="event.stopPropagation()">↩ Restore</button>` : ''}
+              ${hasVideo && !_archiveMode ? `<svg class="w-3.5 h-3.5 text-danger shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>` : ''}
+              ${!_archiveMode ? `<button class="w-6 h-6 grid place-items-center rounded hover:bg-primary/15 hover:text-primary-2 text-muted transition shrink-0 ex-edit-pencil-btn" data-edit-exercise="${escAttr(e.id)}" title="${t('aria.editExercise')}" type="button">
                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              ${_editMode ? `<button class="w-6 h-6 grid place-items-center rounded hover:bg-accent/15 hover:text-accent text-muted transition shrink-0" data-move-exercise="${escAttr(e.id)}" title="${t('aria.moveExercise')}" onclick="event.stopPropagation()">
+              </button>` : ''}
+              ${_editMode && !_archiveMode ? `<button class="w-6 h-6 grid place-items-center rounded hover:bg-accent/15 hover:text-accent text-muted transition shrink-0" data-move-exercise="${escAttr(e.id)}" title="${t('aria.moveExercise')}" onclick="event.stopPropagation()">
                 <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
               </button>` : ''}
               <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${srcClass} shrink-0">${src}</span>
@@ -10914,6 +10951,13 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       // Exercise click → open card in VIEW mode (pencil button = open in EDIT mode)
       tree.querySelectorAll('[data-exercise-id]').forEach(el => {
         el.addEventListener('click', (e) => {
+          // If user clicked the restore button (archive mode), handle separately
+          if (e.target.closest('[data-restore-exercise]')) {
+            e.stopPropagation();
+            const restoreId = e.target.closest('[data-restore-exercise]').getAttribute('data-restore-exercise');
+            if (restoreId) restoreExercise(restoreId);
+            return;
+          }
           // If user clicked the move button (edit mode), let the move handler take it
           if (e.target.closest('[data-move-exercise]')) return;
           // If user clicked the pencil edit button, do nothing here — handled by
@@ -11542,9 +11586,19 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         return;
       }
       try {
-        await db.del('exercise_base', id);
+        // Soft-delete: mark as archived instead of hard delete (Archive feature)
+        const ex = await db.get('exercise_base', id);
+        if (ex) {
+          ex.is_archived = true;
+          ex.archived_at = Date.now();
+          // Preserve original folder_path for archive display
+          if (!ex._archived_from && ex.folder_path) {
+            ex._archived_from = JSON.stringify(ex.folder_path);
+          }
+          await db.put('exercise_base', ex);
+        }
         closeModal();
-        toast(t('exercise.deleted'), 'warning');
+        toast((t('exercise.archived') || 'Moved to archive'), 'warning', 2000);
         await load();
       } catch (e) {
         toast(t('common.errorPrefix') + (e.message || e), 'danger');
@@ -11579,6 +11633,29 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
 
     // Edit mode state
     let _editMode = false;
+    // Archive mode state (Archive feature)
+    let _archiveMode = false;
+    function toggleArchiveMode() {
+      _archiveMode = !_archiveMode;
+      const btn = document.getElementById('exercise-archive-btn');
+      if (btn) {
+        if (_archiveMode) { btn.classList.add('bg-warning','text-white'); btn.classList.remove('text-muted'); }
+        else { btn.classList.remove('bg-warning','text-white'); btn.classList.add('text-muted'); }
+      }
+      applyFilters();
+    }
+    async function restoreExercise(id) {
+      try {
+        const ex = await db.get('exercise_base', id);
+        if (ex) {
+          ex.is_archived = false;
+          delete ex.archived_at;
+          await db.put('exercise_base', ex);
+          toast((t('exercise.restored') || 'Restored from archive'), 'success', 2000);
+          await load();
+        }
+      } catch (e) { toast(t('common.errorPrefix') + (e.message || e), 'danger'); }
+    }
     function toggleEditMode() {
       _editMode = !_editMode;
       const tree = document.getElementById('exercise-tree');
@@ -11739,7 +11816,8 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
              saveFromForm, deleteCurrent, setSearch, setSource,
              toggleEditMode, renameFolder, deleteFolder, moveExercise, moveGroup,
              addRootFolder, promptAddFolder, moveItem, openFolderPicker,
-             setBodyMapFilter, clearBodyMapFilter };
+             setBodyMapFilter, clearBodyMapFilter,
+             toggleArchiveMode, restoreExercise, get _archiveMode() { return _archiveMode; } };
   })();
 
   /* =====================================================================
@@ -12216,14 +12294,14 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     let _exMapSize = -1;     // track cache size to invalidate Map
 
     /** Start a fresh empty workout. */
-    function start() {
+    async function start() {
       _workout = {
         name: '',
         client_id: '',
         exercises: [],
         started_at: Date.now()
       };
-      loadExerciseCache();
+      await loadExerciseCache();  // Fix: await before render() so thumbnails appear on first render
       loadClientList();
       render();
       router.show('live-workout');
@@ -12231,7 +12309,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     }
 
     /** Start from a template (prefill exercises). */
-    function startFromTemplate(tpl) {
+    async function startFromTemplate(tpl) {
       _workout = {
         name: tpl.name || '',
         client_id: '',
@@ -12243,7 +12321,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         })),
         started_at: Date.now()
       };
-      loadExerciseCache();
+      await loadExerciseCache();  // Fix: await before render() so thumbnails appear
       loadClientList();
       render();
       router.show('live-workout');
@@ -12254,7 +12332,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     /** Start from a program day (prefill exercises + client_id).
      *  This is the SAME pattern as startFromTemplate — set _workout with
      *  exercises BEFORE calling render() so the first render shows them. */
-    function startFromProgram(prefill) {
+    async function startFromProgram(prefill) {
       _workout = {
         name: prefill.name || '',
         client_id: prefill.client_id || '',
@@ -12273,7 +12351,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
         })),
         started_at: Date.now()
       };
-      loadExerciseCache();
+      await loadExerciseCache();  // Fix: await before render() so thumbnails appear
       loadClientList().then(() => {
         // Set the client dropdown after the list is loaded
         if (prefill.client_id) {
@@ -12287,7 +12365,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
     }
 
     async function loadExerciseCache() {
-      _exerciseCache = await db.all('exercise_base');
+      _exerciseCache = (await db.all('exercise_base')).filter(e => !e.is_archived);  // Archive feature;
     }
 
     async function loadClientList() {
@@ -17643,8 +17721,9 @@ Select foods for each meal. Output as JSON only.`;
     ];
 
     async function loadFoods() {
-      _foods = await db.all('food_database');
-      console.info(`[nutrition] loaded ${_foods.length} foods`);
+      const all = await db.all('food_database');
+      _foods = all.filter(f => !f.is_archived);  // Archive feature: hide archived foods
+      console.info(`[nutrition] loaded ${_foods.length} foods (${all.length - _foods.length} archived)`);
     }
 
     async function loadPlans(clientId) {
@@ -18973,7 +19052,8 @@ Select foods for each meal. Output as JSON only.`;
 
     /** Load all foods from IndexedDB. */
     async function load() {
-      _all = await db.all('food_database');
+      const raw = await db.all('food_database');
+      _all = raw.filter(f => !f.is_archived);  // Archive feature: hide archived foods
       _loaded = true;
       populateCategoryFilter();
       applyFilters();
@@ -19547,10 +19627,18 @@ Select foods for each meal. Output as JSON only.`;
   async function deleteFoodDetail() {
     if (!_foodDetailCurrentId) return;
     if (!confirm(t('food.deleteConfirm') || 'Delete this food?')) return;
-    try { await db.del('food_database', _foodDetailCurrentId); } catch(e) {}
+    try {
+      // Soft-delete: mark as archived instead of hard delete (Archive feature)
+      const food = await db.get('food_database', _foodDetailCurrentId);
+      if (food) {
+        food.is_archived = true;
+        food.archived_at = Date.now();
+        await db.put('food_database', food);
+      }
+    } catch(e) {}
     if (typeof foodDatabase !== 'undefined') await foodDatabase.load();
     if (typeof nutritionPlans !== 'undefined') await nutritionPlans.loadFoods();
-    toast((t('food.deleted') || 'Food deleted') + ' ✓', 'warning', 2000);
+    toast((t('food.archived') || 'Moved to archive') + ' ✓', 'warning', 2000);
     document.getElementById('food-detail-modal').classList.add('hidden');
   }
 
@@ -21429,10 +21517,64 @@ async function boot() {
       if (screens.exercises) screens.exercises.toggleEditMode();
     });
 
+    // Archive button (Archive feature)
+    const archiveBtn = document.getElementById('exercise-archive-btn');
+    if (archiveBtn) archiveBtn.addEventListener('click', () => {
+      if (screens.exercises && screens.exercises.toggleArchiveMode) screens.exercises.toggleArchiveMode();
+    });
+
     // Add root folder button
     const addRootFolderBtn = document.getElementById('exercise-add-root-folder-btn');
     if (addRootFolderBtn) addRootFolderBtn.addEventListener('click', () => {
       if (screens.exercises) screens.exercises.addRootFolder();
+    });
+
+    // Body map toggle on Exercises screen (Fix: was completely unwired)
+    const bmToggle = document.getElementById('exercise-bodymap-toggle');
+    const bmPanel = document.getElementById('exercise-bodymap-panel');
+    const bmSvgContainer = document.getElementById('exercise-bodymap-svg');
+    const bmActiveLabel = document.getElementById('exercise-bodymap-active');
+    const bmClearBtn = document.getElementById('exercise-bodymap-clear');
+    let _bmPanelInited = false;
+    if (bmToggle) bmToggle.addEventListener('click', () => {
+      if (!bmPanel) return;
+      bmPanel.classList.toggle('hidden');
+      if (!bmPanel.classList.contains('hidden') && !_bmPanelInited && bmSvgContainer) {
+        // Render front body SVG and wire muscle click → setBodyMapFilter
+        _bmPanelInited = true;
+        if (window.BM_SVG_FRONT) {
+          bmSvgContainer.innerHTML = window.BM_SVG_FRONT;
+          // Scale down the SVG
+          const svg = bmSvgContainer.querySelector('svg');
+          if (svg) { svg.style.maxWidth = '140px'; svg.style.height = 'auto'; }
+          // Wire each clickable muscle zone
+          bmSvgContainer.querySelectorAll('.bm-muscle').forEach(el => {
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', () => {
+              const group = el.getAttribute('data-group');
+              const subgroup = el.getAttribute('data-subgroup') || '';
+              if (group && screens.exercises && screens.exercises.setBodyMapFilter) {
+                screens.exercises.setBodyMapFilter(group, subgroup);
+                if (bmActiveLabel) {
+                  const lang = currentLang();
+                  const gLabel = (typeof groupName === 'function') ? groupName(group) : group;
+                  bmActiveLabel.textContent = gLabel + (subgroup ? ' / ' + ((typeof subgroupName === 'function') ? subgroupName(subgroup) : subgroup) : '');
+                }
+                // Visual feedback: highlight clicked muscle
+                bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.style.opacity = '0.4');
+                el.style.opacity = '1';
+              }
+            });
+          });
+        }
+      }
+    });
+    if (bmClearBtn) bmClearBtn.addEventListener('click', () => {
+      if (screens.exercises && screens.exercises.clearBodyMapFilter) {
+        screens.exercises.clearBodyMapFilter();
+      }
+      if (bmActiveLabel) bmActiveLabel.textContent = '—';
+      if (bmSvgContainer) bmSvgContainer.querySelectorAll('.bm-muscle').forEach(m => m.style.opacity = '1');
     });
 
     // Body Map Picker wiring
