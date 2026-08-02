@@ -2,13 +2,13 @@
 // Caches the app shell for offline use.
 // Strategy: cache-first for app shell, network-first for everything else.
 
-const CACHE_NAME = 'dk-gym-v2';
+const CACHE_NAME = 'dk-gym-v5';
 const APP_SHELL = [
   './',
   './fitness-crm.html',
+  './exercise-db.json',
+  './food-db.json',
   './manifest.json',
-  './icon-512.png',
-  './icon-192.png',
 ];
 
 // Install: pre-cache the app shell
@@ -49,14 +49,23 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
           }
           return res;
-        }).catch(() => cached);
+        }).catch(() => {
+          // Fix: return cached if available, otherwise a proper Response (not undefined)
+          if (cached) return cached;
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        });
       })
     );
   }
   // Network-first for external (images, etc.)
   else {
     event.respondWith(
-      fetch(req).catch(() => caches.match(req))
+      fetch(req).catch(() => {
+        return caches.match(req).then((cached) => {
+          if (cached) return cached;
+          return new Response('', { status: 503, statusText: 'Offline' });
+        });
+      })
     );
   }
 });
