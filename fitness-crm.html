@@ -1055,10 +1055,9 @@
       transform-origin: top left;
     }
 
-    /* Body map SVG size */
+    /* Body map SVG size — transform removed (was causing pointer-events issues in modal context) */
     .bm-body-svg {
-      transform: scale(var(--ui-bodymap));
-      transform-origin: center top;
+      /* transform: scale(var(--ui-bodymap)); — removed, was breaking clicks in bodyMapPicker */
     }
 
     /* Modal width — affects all modal content containers */
@@ -14305,12 +14304,32 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       const container = document.getElementById('bm-svg-container');
       if (container) {
         container.innerHTML = _view === 'front' ? SVG_FRONT : _view === 'back' ? SVG_BACK : SVG_SIDE;
+        // Fix: explicitly set fill + pointer-events on all muscle paths to ensure
+        // they're visible and clickable regardless of gradient/CSS context.
+        // The gradient uses CSS variables that may not resolve in all contexts.
         container.querySelectorAll('.bm-muscle').forEach(el => {
+          // Ensure pointer events work
+          el.style.pointerEvents = 'auto';
+          el.style.cursor = 'pointer';
+          // Apply group-based fill color (overrides gradient for guaranteed visibility)
           const group = el.getAttribute('data-group');
           const subgroup = el.getAttribute('data-subgroup');
+          if (group) {
+            const color = GROUP_COLORS[group] || 'rgb(var(--c-primary))';
+            // Use semi-transparent fill so muscles are visible but not overwhelming
+            el.style.fill = color;
+            el.style.fillOpacity = '0.55';
+            el.style.stroke = 'rgb(var(--c-text))';
+            el.style.strokeWidth = '1';
+          }
           if (_activeGroup === group) {
-            if (_activeSubgroup && subgroup !== _activeSubgroup) { el.style.opacity = '0.4'; }
-            else { el.classList.add('active'); el.style.opacity = ''; }
+            if (_activeSubgroup && subgroup !== _activeSubgroup) {
+              el.style.fillOpacity = '0.2';
+            } else {
+              el.classList.add('active');
+              el.style.fillOpacity = '0.85';
+              el.style.filter = 'brightness(1.4)';
+            }
           }
           el.addEventListener('click', () => {
             if (_activeGroup === group && _activeSubgroup === subgroup) {
