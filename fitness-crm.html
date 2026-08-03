@@ -3244,20 +3244,18 @@
               </div>
             </div>
 
-            <!-- About (collapsible) -->
-            <div class="bg-surface border border-border rounded-2xl shadow-card mb-4 settings-panel collapsed">
-              <div class="settings-panel-header p-5 pb-3">
-                <h3 class="font-display font-bold text-sm text-muted uppercase tracking-wider" data-i18n="settings.about">About</h3>
-                <svg class="w-4 h-4 text-muted settings-panel-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-              </div>
-              <div class="settings-panel-body p-5 pt-0">
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between"><span class="text-muted" data-i18n="settings.version">Version</span><span class="font-mono" id="settings-version">—</span></div>
-                <div class="flex justify-between"><span class="text-muted" data-i18n="settings.database">Database</span><span class="font-mono" id="settings-db-info">—</span></div>
-                <div class="flex justify-between"><span class="text-muted" data-i18n="settings.storage">Storage</span><span class="font-mono" data-i18n="settings.indexedDBLocal">IndexedDB (local)</span></div>
-                <div class="flex justify-between"><span class="text-muted" data-i18n="settings.languages">Languages</span><span class="font-mono" data-i18n="settings.languagesValue">RU · EN · HE</span></div>
-              </div>
-              </div>
+            <!-- Encyclopedia (replaces About) -->
+            <div class="bg-surface border border-border rounded-2xl shadow-card mb-4">
+              <button id="settings-encyclopedia" class="w-full p-5 flex items-center gap-3 text-start hover:bg-surface-2 transition rounded-2xl">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary-2 grid place-items-center shrink-0">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div class="flex-1 text-start">
+                  <div class="text-sm font-bold" data-i18n="settings.encyclopedia">Encyclopedia</div>
+                  <div class="text-[11px] text-muted" data-i18n="settings.encyclopediaDesc">Complete guide for trainers and nutritionists</div>
+                </div>
+                <svg class="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             </div>
 
             <!-- Lock button -->
@@ -3486,19 +3484,19 @@
             </div>
           </fieldset>
 
-          <!-- Group / Subgroup / Equipment (3 langs each) -->
+          <!-- Group / Subgroup / Equipment — dropdown selectors with i18n labels -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
               <label class="block text-[11px] uppercase tracking-wider text-muted font-semibold mb-1" data-i18n="exercise.group">Group</label>
-              <input name="group_en" list="group-list" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
+              <select name="group_en" id="ex-form-group-select" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer"></select>
             </div>
             <div>
               <label class="block text-[11px] uppercase tracking-wider text-muted font-semibold mb-1" data-i18n="exercise.subgroup">Subgroup</label>
-              <input name="subgroup_en" list="subgroup-list" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
+              <select name="subgroup_en" id="ex-form-subgroup-select" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer"></select>
             </div>
             <div>
               <label class="block text-[11px] uppercase tracking-wider text-muted font-semibold mb-1" data-i18n="exercise.equipment">Equipment</label>
-              <input name="equipment_en" list="equipment-list" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60" />
+              <select name="equipment_en" id="ex-form-equipment-select" class="w-full bg-surface-2 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60 cursor-pointer"></select>
             </div>
           </div>
 
@@ -3776,6 +3774,25 @@
           </button>
         </div>
         <div id="nt-picker-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- ============= ENCYCLOPEDIA MODAL (replaces About) ============= -->
+    <div id="encyclopedia-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+      <div class="bg-surface w-full sm:max-w-4xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
+        <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-bold text-base" data-i18n="settings.encyclopedia">Encyclopedia</h3>
+            <p class="text-xs text-muted" data-i18n="settings.encyclopediaDesc">Complete guide for trainers and nutritionists</p>
+          </div>
+          <button id="encyclopedia-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close" data-i18n-attr="aria-label:aria.close">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <!-- Chapter tabs -->
+        <div id="encyclopedia-tabs" class="flex gap-1 p-2 border-b border-border overflow-x-auto no-scrollbar shrink-0"></div>
+        <!-- Content -->
+        <div id="encyclopedia-content" class="flex-1 overflow-y-auto p-4 sm:p-6"></div>
       </div>
     </div>
 
@@ -11523,12 +11540,69 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       modal.classList.remove('hidden');
     }
 
+    /** Populate Group/Subgroup/Equipment select dropdowns with i18n labels.
+     *  Option value = English label (for backward compat with stored data).
+     *  Option text = translated label in current language. */
+    function _populateFormSelects() {
+      const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+      // Group select
+      const groupSel = document.getElementById('ex-form-group-select');
+      if (groupSel && !groupSel.options.length) {
+        let gh = '<option value="">—</option>';
+        Object.keys(GROUP_I18N).forEach(k => {
+          const lbl = GROUP_I18N[k][lang] || GROUP_I18N[k].en || k;
+          gh += `<option value="${GROUP_I18N[k].en}">${escHTML(lbl)}</option>`;
+        });
+        groupSel.innerHTML = gh;
+      } else if (groupSel) {
+        // Update labels for current language
+        Array.from(groupSel.options).forEach(opt => {
+          if (!opt.value) return;
+          const entry = Object.entries(GROUP_I18N).find(([k, v]) => v.en === opt.value);
+          if (entry) opt.textContent = entry[1][lang] || entry[1].en || opt.value;
+        });
+      }
+      // Subgroup select
+      const subSel = document.getElementById('ex-form-subgroup-select');
+      if (subSel && !subSel.options.length) {
+        let sh = '<option value="">—</option>';
+        Object.keys(SUBGROUP_I18N).forEach(k => {
+          const lbl = SUBGROUP_I18N[k][lang] || SUBGROUP_I18N[k].en || k;
+          sh += `<option value="${k}">${escHTML(lbl)}</option>`;
+        });
+        subSel.innerHTML = sh;
+      } else if (subSel) {
+        Array.from(subSel.options).forEach(opt => {
+          if (!opt.value) return;
+          const entry = SUBGROUP_I18N[opt.value];
+          if (entry) opt.textContent = entry[lang] || entry.en || opt.value;
+        });
+      }
+      // Equipment select
+      const eqSel = document.getElementById('ex-form-equipment-select');
+      if (eqSel && !eqSel.options.length) {
+        let eh = '<option value="">—</option>';
+        Object.keys(EQUIPMENT_I18N).forEach(k => {
+          const lbl = EQUIPMENT_I18N[k][lang] || EQUIPMENT_I18N[k].en || k;
+          eh += `<option value="${k}">${escHTML(lbl)}</option>`;
+        });
+        eqSel.innerHTML = eh;
+      } else if (eqSel) {
+        Array.from(eqSel.options).forEach(opt => {
+          if (!opt.value) return;
+          const entry = EQUIPMENT_I18N[opt.value];
+          if (entry) opt.textContent = entry[lang] || entry.en || opt.value;
+        });
+      }
+    }
+
     /** Open exercise form in create mode. */
     function openCreate() {
       const modal = document.getElementById('exercise-modal');
       const form = document.getElementById('exercise-form');
       form.reset();
       form.elements.id.value = '';
+      _populateFormSelects();
       document.getElementById('exercise-modal-title').textContent = t('exercise.add');
       document.getElementById('exercise-view').classList.add('hidden');
       form.classList.remove('hidden');
@@ -11548,6 +11622,7 @@ Create a ${freq}-day workout program using the ${pbSplit} split. Consider the bo
       if (!e) return;
       const modal = document.getElementById('exercise-modal');
       const form = document.getElementById('exercise-form');
+      _populateFormSelects();
       form.elements.id.value = e.id || '';
       form.elements.name_en.value = e.name_en || '';
       form.elements.name_ru.value = e.name_ru || '';
@@ -21529,11 +21604,235 @@ async function boot() {
       toast(t('auth.logout'), 'info', 1500);
     });
 
-    // Populate about section
-    const versionEl = document.getElementById('settings-version');
-    if (versionEl) versionEl.textContent = APP_VERSION;
-    const dbInfoEl = document.getElementById('settings-db-info');
-    if (dbInfoEl) dbInfoEl.textContent = `${db.NAME} v${db.VERSION}`;
+    // Encyclopedia button — opens the comprehensive guide modal
+    const encBtn = document.getElementById('settings-encyclopedia');
+    if (encBtn) encBtn.addEventListener('click', () => {
+      const modal = document.getElementById('encyclopedia-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        _renderEncyclopedia();
+      }
+    });
+    const encClose = document.getElementById('encyclopedia-close');
+    if (encClose) encClose.addEventListener('click', () => {
+      document.getElementById('encyclopedia-modal').classList.add('hidden');
+    });
+    const encModal = document.getElementById('encyclopedia-modal');
+    if (encModal) encModal.addEventListener('click', (e) => {
+      if (e.target === encModal) encModal.classList.add('hidden');
+    });
+  }
+
+  // === ENCYCLOPEDIA MODULE ===
+  // Comprehensive illustrated guide for trainers and nutritionists.
+  // Organized as chapters with tabs. Content is defined as a data structure
+  // so it's easy to edit/expand in the future.
+  let _encCurrentChapter = 0;
+  const ENCYCLOPEDIA_CHAPTERS = [
+    {
+      id: 'overview',
+      icon: '🏠',
+      title: { en: 'Overview', ru: 'Обзор', he: 'סקירה' },
+      sections: [
+        {
+          heading: { en: 'What is David King Gym CRM?', ru: 'Что такое David King Gym CRM?', he: 'מה זה David King Gym CRM?' },
+          body: { en: 'A complete CRM system for personal trainers and nutritionists. Manage clients, create workout programs and nutrition plans, track progress, and analyze recovery — all in one app that works offline as a PWA.',
+                  ru: 'Полная CRM-система для персональных тренеров и диетологов. Управляйте клиентами, создавайте программы тренировок и планы питания, отслеживайте прогресс и анализируйте восстановление — всё в одном приложении, работающем офлайн как PWA.',
+                  he: 'מערכת CRM מלאה למאמנים אישיים ותזונאים. נהל מתאמנים, צור תוכניות אימון ותזונה, עקוב אחר התקדמות ונתח התאוששות — הכל באפליקציה אחת שעובדת אופליין כ-PWA.' }
+        },
+        {
+          heading: { en: 'Key Features', ru: 'Ключевые возможности', he: 'תכונות עיקריות' },
+          list: {
+            en: ['1660+ exercises with 3-language names, photos, and technique descriptions', 'Interactive body map (front/back/side) for visual exercise selection', 'Compound/Isolation classification and force-type (push/pull/static) filters', 'Auto-arrange exercises by compound-first, push-pull-legs, or large-to-small strategies', 'Drag-and-drop exercise reordering', 'Set types: Normal, Warmup, Drop, Failure, AMRAP', 'Recovery heat-map with 6-day decay model and synergist muscle tracking', 'Nutrition plans with 2172+ foods, macro-group organization, micronutrient analysis', 'PWA: installable, works offline, auto-syncs on reconnect'],
+            ru: ['1660+ упражнений с названиями на 3 языках, фото и описанием техники', 'Интерактивная карта тела (спереди/сзади/сбоку) для визуального выбора упражнений', 'Классификация Compound/Isolation и фильтр по типу усилия (push/pull/static)', 'Авто-сортировка упражнений: базовые-изолирующие, жим-тяга-ноги, большие-малые', 'Drag-and-drop изменение порядка упражнений', 'Типы подходов: Normal, Warmup, Drop, Failure, AMRAP', 'Карта восстановления с 6-дневной моделью затухания и учётом синергистов', 'Планы питания с 2172+ продуктами, макро-группами, анализом микронутриентов', 'PWA: устанавливается, работает офлайн, синхронизация при подключении'],
+            he: ['1660+ תרגילים עם שמות ב-3 שפות, תמונות ותיאורי טכניקה', 'מפת גוף אינטראקטיבית (קדימה/אחורה/צד) לבחירת תרגילים ויזואלית', 'סיווג Compound/Isolation וסינון לפי סוג כוח (push/pull/static)', 'סידור אוטומטי: בסיסי-בידוד, דחיפה-משיכה-רגליים, גדול-קטן', 'Drag-and-drop לסידור תרגילים מחדש', 'סוגי סטים: Normal, Warmup, Drop, Failure, AMRAP', 'מפת התאוששות עם מודל דעיכה 6-יומי ומעקב שרירים סינרגיסטים', 'תוכניות תזונה עם 2172+ מזונות, ארגון מאקרו-קבוצות, ניתוח מיקרו-נוטריאנטים', 'PWA: ניתן להתקנה, עובד אופליין, סנכרון אוטומטי']
+          }
+        }
+      ]
+    },
+    {
+      id: 'clients',
+      icon: '👥',
+      title: { en: 'Clients', ru: 'Клиенты', he: 'מתאמנים' },
+      sections: [
+        {
+          heading: { en: 'Managing Clients', ru: 'Управление клиентами', he: 'ניהול מתאמנים' },
+          body: { en: 'Add clients with full profile: name, age, weight, height, goal (hypertrophy, strength, fat loss, endurance, rehab), training split, frequency, equipment available, injuries, and notes. Each client can have a photo for quick identification.',
+                  ru: 'Добавляйте клиентов с полным профилем: имя, возраст, вес, рост, цель (гипертрофия, сила, похудение, выносливость, реабилитация), сплит, частота, доступный инвентарь, травмы и заметки. У каждого клиента может быть фото для быстрой идентификации.',
+                  he: 'הוסף מתאמנים עם פרופיל מלא: שם, גיל, משקל, גובה, מטרה, פיצול אימון, תדירות, ציוד זמין, פציעות והערות. לכל מתאמן יכולה להיות תמונה לזיהוי מהיר.' }
+        },
+        {
+          heading: { en: 'Client Photo', ru: 'Фото клиента', he: 'תמונת מתאמן' },
+          body: { en: 'Click the photo placeholder in the client form to upload a photo. The image is automatically compressed to 256px and stored as base64 — it survives backup/restore and works offline.',
+                  ru: 'Нажмите на placeholder фото в форме клиента, чтобы загрузить фото. Изображение автоматически сжимается до 256px и сохраняется как base64 — оно переживает backup/restore и работает офлайн.',
+                  he: 'לחץ על מקום התמונה בטופס המתאמן כדי להעלות תמונה. התמונה נדחסת אוטומטית ל-256px ונשמרת כ-base64 — היא שורדת גיבוי/שחזור ועובדת אופליין.' }
+        }
+      ]
+    },
+    {
+      id: 'programs',
+      icon: '🏋️',
+      title: { en: 'Workout Programs', ru: 'Программы тренировок', he: 'תוכניות אימון' },
+      sections: [
+        {
+          heading: { en: 'Creating a Program', ru: 'Создание программы', he: 'יצירת תוכנית' },
+          body: { en: 'Click "New program" on the client profile. Choose a split type (Full body, A/B, A/B/C, etc.). Each day can be assigned to a day of the week. Add exercises via the Body Map Picker — click a muscle on the SVG body to filter exercises by that muscle group.',
+                  ru: 'Нажмите "Новая программа" в профиле клиента. Выберите тип сплита (Full body, A/B, A/B/C и т.д.). Каждый день можно назначить на день недели. Добавляйте упражнения через Body Map Picker — кликните на мышцу на SVG теле, чтобы отфильтровать упражнения по этой мышечной группе.',
+                  he: 'לחץ "תוכנית חדשה" בפרופיל המתאמן. בחר סוג פיצול. כל יום ניתן להקצות ליום בשבוע. הוסף תרגילים דרך Body Map Picker — לחץ על שריר בגוף ה-SVG כדי לסנן תרגילים.' }
+        },
+        {
+          heading: { en: 'Auto-Arrange', ru: 'Авто-сортировка', he: 'סידור אוטומטי' },
+          body: { en: 'The "Auto-arrange" button reorders exercises in the active day using one of three strategies: Compound → Isolation (multi-joint first), Push → Pull → Legs, or Large → Small muscle groups. No competitor app offers this feature.',
+                  ru: 'Кнопка "Авто-сортировка" переупорядочивает упражнения в активном дне по одной из трёх стратегий: Базовые → Изолирующие, Жим → Тяга → Ноги, или Большие → Малые мышцы. Ни одно приложение-конкурент не предлагает эту функцию.',
+                  he: 'כפתור "סידור אוטומטי" מסדר מחדש תרגילים ביום הפעיל לפי אחת מ-3 אסטרטגיות: בסיסי → בידוד, דחיפה → משיכה → רגליים, או גדול → קטן.' }
+        },
+        {
+          heading: { en: 'Set Types', ru: 'Типы подходов', he: 'סוגי סטים' },
+          body: { en: 'Each set can be tagged: Normal (default), Warmup (🔥 yellow), Drop (📉 cyan), Failure (💥 red), AMRAP (∞ blue). Click the sun icon next to each set to cycle through types.',
+                  ru: 'Каждый подход можно отметить: Normal (по умолчанию), Warmup (🔥 жёлтый), Drop (📉 голубой), Failure (💥 красный), AMRAP (∞ синий). Нажмите на иконку солнца рядом с подходом для переключения типа.',
+                  he: 'כל סט ניתן לסימון: Normal, Warmup (🔥), Drop (📉), Failure (💥), AMRAP (∞). לחץ על סמל השמש ליד כל סט כדי לעבור בין הסוגים.' }
+        },
+        {
+          heading: { en: 'Drag & Drop', ru: 'Перетаскивание', he: 'גרירה ושחרור' },
+          body: { en: 'Drag exercises by the grip handle (6-dot icon) to reorder them within a day. Drop above or below the target card to insert before or after. Set data (weight, reps, RPE) is preserved during moves.',
+                  ru: 'Перетаскивайте упражнения за grip handle (иконка с 6 точками), чтобы изменить порядок внутри дня. Бросайте выше или ниже целевой карточки для вставки до или после. Данные подходов сохраняются при перемещении.',
+                  he: 'גרור תרגילים מסמל 6 הנקודות כדי לשנות סדר ביום. השלך מעל או מתחת לכרטיס היעד. נתוני הסטים נשמרים בעת ההזזה.' }
+        }
+      ]
+    },
+    {
+      id: 'nutrition',
+      icon: '🥗',
+      title: { en: 'Nutrition Plans', ru: 'Планы питания', he: 'תוכניות תזונה' },
+      sections: [
+        {
+          heading: { en: 'Creating a Nutrition Plan', ru: 'Создание плана питания', he: 'יצירת תוכנית תזונה' },
+          body: { en: 'Click "New nutrition plan" on the client profile. Set target calories and macros (protein/carbs/fat). Add foods via the Food Picker — foods are organized into 4 macro-groups: Proteins (🥩), Carbohydrates (🍞), Fats (🥜), Other (⭐). Each group expands to show food categories.',
+                  ru: 'Нажмите "Новый план питания" в профиле клиента. Установите целевые калории и макросы (белки/углеводы/жиры). Добавляйте продукты через Food Picker — продукты организованы в 4 макро-группы: Белки (🥩), Углеводы (🍞), Жиры (🥜), Другое (⭐). Каждая группа раскрывается, показывая категории продуктов.',
+                  he: 'לחץ "תוכנית תזונה חדשה" בפרופיל המתאמן. הגדר קלוריות יעד ומאקרו. הוסף מזונות דרך Food Picker — המזונות מאורגנים ב-4 קבוצות מאקרו: חלבונים (🥩), פחמימות (🍞), שומנים (🥜), אחר (⭐).' }
+        },
+        {
+          heading: { en: 'Micronutrient Analysis', ru: 'Анализ микронутриентов', he: 'ניתוח מיקרו-נוטריאנטים' },
+          body: { en: 'Click "Micronutrients" to see vitamin, mineral, and amino acid coverage for the plan. Each nutrient shows a progress bar with percentage of RDI. The "Suggest foods" button finds foods richest in the most deficient nutrients.',
+                  ru: 'Нажмите "Микронутриенты", чтобы увидеть покрытие витаминов, минералов и аминокислот в плане. Каждый нутриент показывает прогресс-бар с процентом от RDI. Кнопка "Подобрать продукты" находит продукты, богатые самыми дефицитными нутриентами.',
+                  he: 'לחץ "מיקרו-נוטריאנטים" כדי לראות כיסוי ויטמינים, מינרלים וחומצות אמינו. כל נוטריאנט מציג פס התקדמות עם אחוז מ-RDI.' }
+        }
+      ]
+    },
+    {
+      id: 'recovery',
+      icon: '📊',
+      title: { en: 'Recovery Map', ru: 'Карта восстановления', he: 'מפת התאוששות' },
+      sections: [
+        {
+          heading: { en: 'How Recovery Works', ru: 'Как работает восстановление', he: 'איך עובד ההתאוששות' },
+          body: { en: 'The Recovery Map shows per-muscle recovery percentage using a 6-day exponential decay model. After each workout, the exercised muscles start at 0% recovery and gradually recover: ~63% after 3 days, ~86% after 6 days. Synergist muscles (e.g. triceps during bench press) receive 30% fatigue credit.',
+                  ru: 'Карта восстановления показывает процент восстановления каждой мышцы по 6-дневной модели экспоненциального затухания. После каждой тренировки тренируемые мышцы начинают с 0% и постепенно восстанавливаются: ~63% через 3 дня, ~86% через 6 дней. Синергисты (например, трицепс при жиме лёжа) получают 30% усталости.',
+                  he: 'מפת ההתאוששות מציגה אחוז התאוששות לכל שריר במודל דעיכה מעריכית 6-יומי. לאחר כל אימון, השרירים מתחילים מ-0% ומתאוששים בהדרגה: ~63% לאחר 3 ימים, ~86% לאחר 6 ימים. שרירים סינרגיסטים מקבלים 30% עייפות.' }
+        },
+        {
+          heading: { en: 'Three Modes', ru: 'Три режима', he: 'שלושה מצבים' },
+          list: {
+            en: ['Recovery: color-coded muscles (red=fatigued, yellow=recovering, green=fresh)', '7d Volume: total training volume per muscle in the last 7 days', '30d Volume: total training volume per muscle in the last 30 days'],
+            ru: ['Восстановление: цветные мышцы (красный=утомлена, жёлтый=восстанавливается, зелёный=свежая)', 'Объём за 7 дней: общий тренировочный объём на мышцу за 7 дней', 'Объём за 30 дней: общий тренировочный объём на мышцу за 30 дней'],
+            he: ['התאוששות: שרירים צבעוניים (אדום=עייף, צהוב=מתאושש, ירוק=רענן)', 'נפח 7 ימים: נפח אימון כולל לכל שריר ב-7 ימים האחרונים', 'נפח 30 ימים: נפח אימון כולל לכל שריר ב-30 ימים האחרונים']
+          }
+        }
+      ]
+    },
+    {
+      id: 'archive',
+      icon: '📦',
+      title: { en: 'Archive System', ru: 'Система архива', he: 'מערכת ארכיון' },
+      sections: [
+        {
+          heading: { en: 'Soft Delete & Restore', ru: 'Мягкое удаление и восстановление', he: 'מחיקה רכה ושחזור' },
+          body: { en: 'When you delete an exercise or food, it is not permanently removed — it moves to the Archive. Click the Archive button (📦) in the Exercises or Food Database toolbar to view archived items. Each item shows a "Restore" button (↩). Archive mode auto-disables when you switch screens.',
+                  ru: 'При удалении упражнения или продукта оно не удаляется навсегда — оно перемещается в Архив. Нажмите кнопку Архив (📦) в панели инструментов упражнений или базы продуктов, чтобы увидеть архивные элементы. У каждого элемента есть кнопка "Восстановить" (↩). Режим архива автоматически отключается при переключении экранов.',
+                  he: 'בעת מחיקת תרגיל או מזון, הם אינם נמחקים לצמיתות — הם עוברים לארכיון. לחץ על כפתור הארכיון (📦) בסרגל הכלים של תרגילים או מסד המזונות. לכל פריט יש כפתור "שחזר" (↩). מצב ארכיון מתנתק אוטומטית בעת מעבר בין מסכים.' }
+        }
+      ]
+    },
+    {
+      id: 'bodymap',
+      icon: '🗺️',
+      title: { en: 'Body Map', ru: 'Карта тела', he: 'מפת גוף' },
+      sections: [
+        {
+          heading: { en: 'Three Views', ru: 'Три вида', he: 'שלושה תצפיות' },
+          body: { en: 'The body map has 3 SVG views: Front (36 muscle zones), Back (27 zones), and Side (22 zones). Each muscle is color-coded by group. Click a muscle to filter exercises for that specific subgroup. The body map is available in both the Exercise Database screen and the Program Builder picker.',
+                  ru: 'Карта тела имеет 3 SVG-вида: Спереди (36 мышечных зон), Сзади (27 зон) и Сбоку (22 зоны). Каждая мышца окрашена по группе. Кликните на мышцу, чтобы отфильтровать упражнения для этой подгруппы. Карта тела доступна как в базе упражнений, так и в пикере построения программ.',
+                  he: 'מפת הגוף כוללת 3 תצפיות SVG: קדימה (36 אזורי שרירים), אחורה (27), וצד (22). כל שריר צבוע לפי קבוצה. לחץ על שריר כדי לסנן תרגילים לאזור זה.' }
+        },
+        {
+          heading: { en: 'Classification Filters', ru: 'Фильтры классификации', he: 'מסנני סיווג' },
+          body: { en: 'In the program builder picker, 4 classification filter rows appear below the equipment chips: Mechanic (Compound/Isolation), Force (Push/Pull/Static), Level (Beginner/Intermediate/Expert), and Category (Strength/Plyometrics/Stretching/etc.). Each chip shows the count of matching exercises.',
+                  ru: 'В пикере построения программ под чипами инвентаря появляются 4 строки фильтров классификации: Механика (Базовые/Изолирующие), Усилие (Жим/Тяга/Статика), Уровень (Начальный/Средний/Эксперт) и Категория (Сила/Плиометрика/Растяжка и т.д.). Каждый чип показывает количество подходящих упражнений.',
+                  he: 'בבורר בניית התוכניות, מתחת לשבבי הציוד מופיעים 4 שורות סינון: מכניקה, כוח, רמה וקטגוריה. כל שבב מציג את מספר התרגילים התואמים.' }
+        }
+      ]
+    },
+    {
+      id: 'backup',
+      icon: '💾',
+      title: { en: 'Backup & Security', ru: 'Резервное копирование и безопасность', he: 'גיבוי ואבטחה' },
+      sections: [
+        {
+          heading: { en: 'Password Protection', ru: 'Защита паролем', he: 'הגנת סיסמה' },
+          body: { en: 'The app uses PBKDF2 (100,000 iterations + SHA-256) for password hashing. Old SHA-256 passwords are automatically upgraded on first login. No password is stored in plaintext.',
+                  ru: 'Приложение использует PBKDF2 (100,000 итераций + SHA-256) для хеширования пароля. Старые пароли SHA-256 автоматически обновляются при первом входе. Никакой пароль не хранится в открытом виде.',
+                  he: 'האפליקציה משתמשת ב-PBKDF2 (100,000 איטרציות + SHA-256) להצפנת סיסמה. סיסמאות ישנות משודרגות אוטומטית בכניסה הראשונה.' }
+        },
+        {
+          heading: { en: 'Export & Import', ru: 'Экспорт и импорт', he: 'ייצוא וייבוא' },
+          body: { en: 'Use Settings → Backup to export all data as a JSON file. Import restores from a backup file. All data is stored locally in IndexedDB — no cloud server required. The app works fully offline.',
+                  ru: 'Используйте Настройки → Резервное копирование для экспорта всех данных в JSON-файл. Импорт восстанавливает из файла резервной копии. Все данные хранятся локально в IndexedDB — облачный сервер не требуется. Приложение полностью работает офлайн.',
+                  he: 'השתמש בהגדרות → גיבוי כדי לייצא את כל הנתונים כקובץ JSON. ייבוא משחזר מקובץ גיבוי. כל הנתונים מאוחסנים מקומית ב-IndexedDB.' }
+        }
+      ]
+    }
+  ];
+
+  function _renderEncyclopedia() {
+    const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+    const tabsEl = document.getElementById('encyclopedia-tabs');
+    const contentEl = document.getElementById('encyclopedia-content');
+    if (!tabsEl || !contentEl) return;
+
+    // Render tabs
+    tabsEl.innerHTML = ENCYCLOPEDIA_CHAPTERS.map((ch, i) => {
+      const active = i === _encCurrentChapter;
+      const lbl = ch.title[lang] || ch.title.en;
+      return `<button class="enc-tab px-3 py-2 rounded-lg text-xs font-semibold transition whitespace-nowrap ${active ? 'bg-primary text-white' : 'bg-surface-2 text-muted hover:bg-border/30'}" data-enc-tab="${i}">${ch.icon} ${escHTML(lbl)}</button>`;
+    }).join('');
+    tabsEl.querySelectorAll('[data-enc-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _encCurrentChapter = parseInt(btn.getAttribute('data-enc-tab'), 10);
+        _renderEncyclopedia();
+      });
+    });
+
+    // Render content for current chapter
+    const ch = ENCYCLOPEDIA_CHAPTERS[_encCurrentChapter];
+    if (!ch) { contentEl.innerHTML = ''; return; }
+    let html = '';
+    ch.sections.forEach(sec => {
+      const h = sec.heading[lang] || sec.heading.en;
+      html += `<h3 class="font-display font-bold text-base mb-2 mt-4 first:mt-0">${escHTML(h)}</h3>`;
+      if (sec.body) {
+        const b = sec.body[lang] || sec.body.en;
+        html += `<p class="text-sm text-muted leading-relaxed mb-3">${escHTML(b)}</p>`;
+      }
+      if (sec.list) {
+        const items = sec.list[lang] || sec.list.en;
+        html += '<ul class="space-y-1.5 mb-3">';
+        items.forEach(item => {
+          html += `<li class="text-sm text-muted flex items-start gap-2"><span class="text-primary-2 shrink-0 mt-0.5">▸</span><span>${escHTML(item)}</span></li>`;
+        });
+        html += '</ul>';
+      }
+    });
+    contentEl.innerHTML = html;
   }
 
   /** Wire the Analytics screen — client selector, range toggle. */
@@ -23215,6 +23514,8 @@ async function boot() {
         exerciseDb: 'Exercise database editor',
         foodDb: 'Food database editor',
         about: 'About',
+        encyclopedia: 'Encyclopedia',
+        encyclopediaDesc: 'Complete guide for trainers and nutritionists',
         version: 'Version',
         fontSize: 'Font size',
         modalSize: 'Modal size',
@@ -24374,6 +24675,8 @@ async function boot() {
         exerciseDb: 'Редактор базы упражнений',
         foodDb: 'Редактор базы продуктов',
         about: 'О приложении',
+        encyclopedia: 'Энциклопедия',
+        encyclopediaDesc: 'Полный справочник для тренеров и диетологов',
         version: 'Версия',
         fontSize: 'Размер шрифта',
         modalSize: 'Размер окон',
@@ -25533,6 +25836,8 @@ async function boot() {
         exerciseDb: 'עורך מאגר תרגילים',
         foodDb: 'עורך מאגר מוצרים',
         about: 'אודות',
+        encyclopedia: 'אנציקלופדיה',
+        encyclopediaDesc: 'מדריך מלא למאמנים ותזונאים',
         version: 'גרסה',
         fontSize: 'גודל גופן',
         modalSize: 'גודל חלונות',
