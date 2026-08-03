@@ -3258,6 +3258,20 @@
               </button>
             </div>
 
+            <!-- Technical Encyclopedia -->
+            <div class="bg-surface border border-border rounded-2xl shadow-card mb-4">
+              <button id="settings-tech-encyclopedia" class="w-full p-5 flex items-center gap-3 text-start hover:bg-surface-2 transition rounded-2xl">
+                <div class="w-10 h-10 rounded-xl bg-accent/10 text-accent grid place-items-center shrink-0">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div class="flex-1 text-start">
+                  <div class="text-sm font-bold" data-i18n="settings.techEncyclopedia">Technical Encyclopedia</div>
+                  <div class="text-[11px] text-muted" data-i18n="settings.techEncyclopediaDesc">Complete system architecture documentation</div>
+                </div>
+                <svg class="w-4 h-4 text-muted shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+
             <!-- Lock button -->
             <button id="settings-lock" class="w-full mt-4 bg-surface-2 hover:bg-danger/15 hover:text-danger border border-border hover:border-danger/30 text-sm font-semibold py-3 rounded-xl transition inline-flex items-center justify-center gap-2">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -3774,6 +3788,29 @@
           </button>
         </div>
         <div id="nt-picker-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- ============= TECHNICAL ENCYCLOPEDIA MODAL ============= -->
+    <div id="tech-encyclopedia-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+      <div class="bg-surface w-full sm:max-w-4xl max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-float">
+        <div class="p-4 border-b border-border flex items-center gap-3 shrink-0">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-bold text-base" data-i18n="settings.techEncyclopedia">Technical Encyclopedia</h3>
+            <p class="text-xs text-muted" data-i18n="settings.techEncyclopediaDesc">Complete system architecture documentation</p>
+          </div>
+          <button id="tech-enc-whatsapp" class="bg-success/15 hover:bg-success/25 text-success border border-success/30 text-xs font-semibold px-3 py-2 rounded-xl transition inline-flex items-center gap-1.5 shrink-0" title="Send to WhatsApp">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.693.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            <span>WhatsApp</span>
+          </button>
+          <button id="tech-enc-close" class="w-8 h-8 grid place-items-center rounded-lg hover:bg-surface-2 text-muted shrink-0" aria-label="Close" data-i18n-attr="aria-label:aria.close">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <!-- Chapter tabs -->
+        <div id="tech-enc-tabs" class="flex gap-1 p-2 border-b border-border overflow-x-auto no-scrollbar shrink-0"></div>
+        <!-- Content -->
+        <div id="tech-enc-content" class="flex-1 overflow-y-auto p-4 sm:p-6"></div>
       </div>
     </div>
 
@@ -21621,6 +21658,351 @@ async function boot() {
     if (encModal) encModal.addEventListener('click', (e) => {
       if (e.target === encModal) encModal.classList.add('hidden');
     });
+
+    // Technical Encyclopedia button
+    const techEncBtn = document.getElementById('settings-tech-encyclopedia');
+    if (techEncBtn) techEncBtn.addEventListener('click', () => {
+      const modal = document.getElementById('tech-encyclopedia-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        _renderTechEncyclopedia();
+      }
+    });
+    const techEncClose = document.getElementById('tech-enc-close');
+    if (techEncClose) techEncClose.addEventListener('click', () => {
+      document.getElementById('tech-encyclopedia-modal').classList.add('hidden');
+    });
+    const techEncModal = document.getElementById('tech-encyclopedia-modal');
+    if (techEncModal) techEncModal.addEventListener('click', (e) => {
+      if (e.target === techEncModal) techEncModal.classList.add('hidden');
+    });
+    // WhatsApp export button
+    const techEncWa = document.getElementById('tech-enc-whatsapp');
+    if (techEncWa) techEncWa.addEventListener('click', () => {
+      _exportTechToWhatsApp();
+    });
+  }
+
+  // === TECHNICAL ENCYCLOPEDIA ===
+  // Full system architecture documentation — describes every component so
+  // the system can be recreated from scratch by any developer or AI agent.
+  // No source code is included — only structural descriptions.
+  let _techEncChapter = 0;
+  const TECH_CHAPTERS = [
+    {
+      id: 'architecture', icon: '🏛️', title: 'Architecture',
+      sections: [
+        { h: 'Application Type', body: 'Single-file Progressive Web App (PWA). All HTML, CSS, and JavaScript in one file (~1.7 MB). No build step, no bundler, no transpiler — vanilla ES6+ runs directly in the browser. Tailwind CSS loaded via Play CDN with inline theme configuration.' },
+        { h: 'Module Pattern', body: 'IIFE (Immediately Invoked Function Expression) pattern: const moduleName = (function(){ ... return { publicApi }; })(). No ES module imports. Modules communicate through shared globals (db, t, currentLang, screens, etc.).' },
+        { h: 'External Dependencies', list: [
+          'Tailwind CSS Play CDN (cdn.tailwindcss.com with forms + typography plugins)',
+          'Google Fonts: Inter (UI), Plus Jakarta Sans (display), JetBrains Mono (numeric)',
+          'No JS frameworks — pure vanilla JavaScript'
+        ]},
+        { h: 'PWA Files (sibling files)', list: [
+          'fitness-crm.html — main app (1.7 MB)',
+          'exercise-db.json — 1,660 exercises seed data (3.36 MB)',
+          'food-db.json — 2,172 foods seed data (1.90 MB)',
+          'manifest.json — PWA manifest (40 lines)',
+          'sw.js — Service Worker v5, cache-first strategy (77 lines)',
+          'icons/ — app icons folder'
+        ]},
+        { h: 'Hosting', body: 'GitHub Pages (davidarieli91-gif.github.io/david-king-gym). No backend server — all data stored locally in IndexedDB. Works fully offline after first load.' }
+      ]
+    },
+    {
+      id: 'database', icon: '🗄️', title: 'Database Schema',
+      sections: [
+        { h: 'IndexedDB Configuration', list: [
+          'Database name: fitness_crm_db',
+          'Database version: 9',
+          'Total object stores: 11',
+          'All keyPaths use "id" (UUIDv4) except settings store which uses "key"'
+        ]},
+        { h: 'Object Store: clients', body: 'keyPath: id. Indexes: by_name (name_lower), by_lastActive (last_active), by_goal (goal), by_createdAt (created_at). Fields: id, full_name, name, phone, email, age, weight, height, goal, split, frequency, fitness_level, training_experience, equipment[], training_days[], injuries, notes, photo_url, last_active, created_at, updated_at, plus body composition (body_fat_pct, visceral_fat, muscle_mass, bone_mass, water_pct, metabolic_age) and measurements (neck_cm through calf_cm).' },
+        { h: 'Object Store: exercise_base', body: 'keyPath: id. Indexes: by_group_en/ru/he, by_source, by_equipment_type, by_name_en/ru/he. 1,660 records. Fields: id, source (muscle_motion/private_gym/burnfit), group_canonical, group_en/ru/he, subgroup_en/ru/he, equipment_type/en/ru/he, name_en/ru/he, technique_en/ru/he, images[], folder_path[], gif_url, synergist_muscles[], movement_type, force, level, mechanic, category, is_archived, archived_at, created_at, updated_at.' },
+        { h: 'Object Store: food_database', body: 'keyPath: id. Indexes: by_source, by_barcode. 2,172 records. Fields: id, name_en/he/ru, source, category, image_url, barcode, brand, nutrition{calories,protein,carbs,fat,sugars,sodium,saturated_fat,fiber,vitamin_a through selenium,cholesterol}, is_archived, archived_at.' },
+        { h: 'Object Store: client_programs', body: 'keyPath: id. Indexes: by_clientId, by_status, by_createdAt. Fields: id, client_id, name, split_type, status (active/archived), duration_months, workout_days[{day_letter, name, is_rest_day, day_of_week, exercises[{exercise_id, name, group, sets[{weight, reps, rpe, type, done}], is_superset, superset_partner, rest_sec}]}], created_at, updated_at, archived_at.' },
+        { h: 'Object Store: workout_history', body: 'keyPath: id. Indexes: by_clientId, by_date, by_clientDate. Fields: id, client_id, name, date, duration, total_volume, exercises[{exercise_id, name, group, muscle_group, sets[{weight, reps, rpe, done}]}].' },
+        { h: 'Object Store: nutrition_plans', body: 'keyPath: id. Indexes: by_clientId, by_status. Fields: id, client_id, name, status, target_calories/protein/carbs/fat, meals[{type, labelKey, foods[{id, name_en/he/ru, grams, nutrition}]}], created_at, updated_at.' },
+        { h: 'Other Stores', list: [
+          'workout_templates — reusable workout templates (by_name, by_clientId, by_createdAt, by_tags multiEntry)',
+          'nutrition_history — daily food log entries',
+          'nutrition_templates — reusable meal templates (by_name)',
+          'food_base — legacy food store (by_name_en/he, by_barcode, by_category)',
+          'settings — key/value store for app configuration (no indexes)'
+        ]}
+      ]
+    },
+    {
+      id: 'modules', icon: '🔧', title: 'Module Architecture',
+      sections: [
+        { h: 'Core Modules (top-level IIFEs)', list: [
+          'db — Promise-based IndexedDB wrapper (open, get, all, find, put, bulkPut, del, clear, count, wipe, uuid)',
+          'auth — PBKDF2 password hashing + in-memory session (setPassword, verifyPassword, lock)',
+          'backup — JSON export/import with format validation',
+          'router — SPA screen switcher (show, current)',
+          'focusTrap — MutationObserver-based modal focus management',
+          'backTrap — Android back-button modal trap (5 sentinel states)',
+          'programImage — Canvas-based branded PNG generator for WhatsApp sharing',
+          'vault — Image compression (canvas→JPEG) + file→base64',
+          'restTimer — Floating countdown with vibrate + Web Audio beep',
+          'openFoodFacts — OFF API client (search + barcode)',
+          'bodyMapPicker — SVG body map modal with muscle-click filtering + classification chips',
+          'recoveryMap — Per-muscle recovery %, 7d/30d volume, synergist credit',
+          'generator — Rule-based workout program generator (injury-aware)',
+          'nutritionGenerator — BMR/TDEE-based meal-plan generator',
+          'nutritionPlans — Plan CRUD + food picker + micronutrient analysis',
+          'foodDatabase — Food DB screen (tree, search, source filter, edit, archive)',
+          'nutritionTemplates — Reusable meal templates CRUD'
+        ]},
+        { h: 'Screen Modules (screens.*)', list: [
+          'screens.dashboard — client CRM grid (search, add, photo, goal badges)',
+          'screens.profile — client detail + programs + nutrition plans + files + print',
+          'screens.analytics — activity heatmap calendar + KPIs',
+          'screens.exercises — exercise DB tree view (3-level: group → subgroup → equipment)',
+          'screens.templates — workout templates list',
+          'screens.history — workout history log',
+          'screens.liveWorkout — active session (set table, duration timer, finish→history)',
+          'screens.nutrition — daily food log (macro rings, meal sections, food picker)'
+        ]},
+        { h: 'Global Helpers', list: [
+          't(key, vars) — i18n translator (returns empty string for missing keys)',
+          'currentLang() — returns current language code (en/ru/he)',
+          'escapeHTML/escHTML/esc/escapeAttr/escAttr — HTML escaping (all aliases of one function)',
+          'setText(id, val) — set element textContent by ID',
+          'avatarGradient(name) — deterministic HSL gradient from name hash',
+          'initials(name) — extract initials from full name',
+          'goalBadgeClass(goal) — Tailwind classes for goal badge color',
+          'formatDuration(seconds) — M:SS time formatting',
+          'buildExerciseIndex(cache) — Map<id, exercise> for O(1) lookups',
+          'globalExName(ex) / globalExGroup(ex) / globalExImage(ex) — localized exercise data by ID'
+        ]}
+      ]
+    },
+    {
+      id: 'screens', icon: '📱', title: 'Screens & Modals',
+      sections: [
+        { h: 'Screens (data-screen attributes)', list: [
+          'login — brand + password create/enter form',
+          'dashboard — client CRM grid with search and goal filter',
+          'profile — single client detail (header, body stats, programs, nutrition, files)',
+          'workouts — 3 sub-tabs: Exercises DB, Templates, History',
+          'live-workout — active training session with set table and timer',
+          'nutrition — daily food log with macro rings and meal sections',
+          'analytics — activity heatmap calendar and KPIs',
+          'settings — theme, language, backup, system info, encyclopedia'
+        ]},
+        { h: 'Modals (24 total)', body: 'All modals have role="dialog" aria-modal="true" and use focus trap. Key modals: program-builder-modal (full program builder with drag-drop), bodymap-picker-modal (SVG body map + exercise grid), recovery-map-modal (3 modes × 3 views), auto-arrange-modal (3 strategies), micronutrient-modal (vitamins/minerals/amino tabs), food-picker-modal (4 macro-group folders), exercise-modal (view/edit/create), client-modal (full profile form), encyclopedia-modal (8-chapter guide), tech-encyclopedia-modal (this document).' }
+      ]
+    },
+    {
+      id: 'bodymap', icon: '🗺️', title: 'Body Map & Classification',
+      sections: [
+        { h: 'SVG Body Map', list: [
+          '3 hand-coded SVG views: Front (36 zones), Back (27 zones), Side (22 zones) = 85 total',
+          'Each zone: <path class="bm-muscle" data-group="..." data-subgroup="..."> with click handler',
+          'Muscles color-coded by group using GROUP_COLORS (11 colors)',
+          'Active muscle highlighted with .active class (brightness + drop-shadow)',
+          'Available in: bodyMapPicker modal (program builder), exercises screen body map panel, recovery map modal'
+        ]},
+        { h: 'Classification System', list: [
+          'GROUP_I18N: 11 muscle groups (chest, back, shoulders, elbow_flexors, triceps, forearms, abdominals, legs, stretching, warmup, calisthenics)',
+          'SUBGROUP_I18N: 33 subgroups (Upper, Middle, Lower, Front, Rear, Biceps, Brachialis, Trapezius, Lats, etc.)',
+          'EQUIPMENT_I18N: 10 equipment types (Barbell, Dumbbell, Cable, Machine, Bodyweight, Kettlebell, Band, EZ-Bar, Plate, Other)',
+          'CLASS_DIMENSIONS: 4 filter dimensions — Mechanic (Compound/Isolation), Force (Push/Pull/Static), Level (Beginner/Intermediate/Expert), Category (Strength/Plyometrics/Stretching/Powerlifting/Olympic/Strongman/Cardio)'
+        ]},
+        { h: 'Exercise Sources', list: [
+          'muscle_motion (mm): 873 exercises — fully classified (force, level, mechanic, category, synergists)',
+          'private_gym (pg): 463 exercises — no classification fields (null)',
+          'burnfit (bf): 324 exercises — no classification fields (null)',
+          'Total: 1,660 exercises with 3-language names (EN/RU/HE), photos, and technique descriptions'
+        ]}
+      ]
+    },
+    {
+      id: 'nutrition', icon: '🥗', title: 'Nutrition System',
+      sections: [
+        { h: 'Food Database', list: [
+          '2,172 foods from 4 sources: USDA_SR_Legacy (1000), OpenFoodFacts_IL (867), FoodsDictionary_IL (241), OpenFoodFacts_Global (64)',
+          '21 food categories: bakery, dairy, meat, fish, fruit, vegetable, legumes, grains, nuts, greens, vegan, sauces, sweets, drinks, israeli, international, oils, eggs, protein, baby, other',
+          'MACRO_GROUPS: 4 top-level folders — Proteins (🥩), Carbohydrates (🍞), Fats (🥜), Other (⭐)',
+          'getMacroGroup(food): runtime classification — protein≥30% cal → proteins, fat≥45% → fats, carbs≥40% → carbs, else category-based'
+        ]},
+        { h: 'Micronutrient Analysis', list: [
+          'MICRONUTRIENT_RDI: 25 nutrients (13 vitamins + 10 minerals + 2 other)',
+          'Vitamins: A, C, D, E, K, B1, B2, B3, B5, B6, B12, folate, choline',
+          'Minerals: calcium, iron, magnesium, phosphorus, potassium, sodium, zinc, copper, manganese, selenium',
+          'Other: fiber, cholesterol (isLimit: true — upper limit, not target)',
+          '3 tabs in modal: Vitamins, Minerals, Amino Acids',
+          'Suggest foods button: findFoodsRichIn(nutrientKey) returns top 5 foods by value per 100g'
+        ]},
+        { h: 'Amino Acid Subsystem', list: [
+          'AA_PROFILES: 21 food-category profiles (mg per g of protein)',
+          'AA_RDA: 9 essential amino acids (histidine, isoleucine, leucine, lysine, methionine, phenylalanine, threonine, tryptophan, valine)',
+          'getFoodAminoAcids(food): runtime calculator — nutrition.protein × profile × 10',
+          'calcAATargets(weightKg): AA_RDA[aa] × body weight',
+          'sumAminoAcids(items): totals across meal items'
+        ]}
+      ]
+    },
+    {
+      id: 'recovery', icon: '📊', title: 'Recovery Map',
+      sections: [
+        { h: 'Decay Model', body: 'Formula: recoveryPct = round(100 × (1 − exp(−daysSince / TAU))) where TAU = 3.0 days. Recovery timeline: 0 days = 0%, 1 day = 28%, 3 days = 63%, 6 days = 86%, 10 days = 96%.' },
+        { h: 'Synergist Credit', body: 'SYNERGIST_CREDIT = 0.30 (30%). When an exercise trains a primary muscle, each synergist muscle listed in exercise.synergist_muscles receives 30% of the volume. Example: Bench Press (chest primary) gives 30% volume credit to shoulders and triceps.' },
+        { h: 'Status Buckets', list: [
+          'fresh: recovery ≥ 85% (green)',
+          'recovering: 50% ≤ recovery < 85% (yellow)',
+          'fatigued: recovery < 50% (red)',
+          'untrained: never trained (gray)'
+        ]},
+        { h: 'Three Modes', list: [
+          'Recovery: color-coded muscles per recovery %',
+          '7d Volume: total training volume per muscle in last 7 days',
+          '30d Volume: total training volume per muscle in last 30 days'
+        ]},
+        { h: 'Data Flow', body: 'computeForClient(clientId) walks workout_history, accumulates volume per (muscle, day-bucket), applies decay + finds most-recent training day. Returns {recovery, lastTrainedDaysAgo, volume7d, volume30d, sets7d, sets30d, status} for all 11 muscle groups.' }
+      ]
+    },
+    {
+      id: 'security', icon: '🔐', title: 'Security & Backup',
+      sections: [
+        { h: 'Password Hashing', list: [
+          'Algorithm: PBKDF2 via Web Crypto (crypto.subtle.deriveBits)',
+          'Hash: SHA-256, Iterations: 100,000',
+          'Salt: random 16 bytes (crypto.getRandomValues)',
+          'Storage: "pbkdf2$<base64>" (algorithm-prefixed)',
+          'Session: in-memory only (_state.unlocked) — no persistent token',
+          'Backward compat: old SHA-256 passwords auto-upgraded to PBKDF2 on first login'
+        ]},
+        { h: 'Backup Format', body: 'JSON file with meta (format_version, app_version, db_name, db_version, created_at, lang, theme, store_counts, total_records) and data (all stores as arrays). Filename: fitness-crm-backup-YYYY-MM-DD.json. Import validates db_name match and format version.' },
+        { h: 'Removed Security Issues', list: [
+          'localStorage auto-backup (dk_ab) — was plaintext PII leak every 5 min, REMOVED',
+          'XSS in openExerciseModal — imgs[] and technique were unescaped, FIXED with escapeAttr/escapeHTML',
+          'All 23 modals now have role="dialog" aria-modal="true" + focus trap'
+        ]},
+        { h: 'Google Drive Backup', body: 'Scaffold for OAuth-based cloud backup using Google Identity Services + Drive API v3. Requires user to paste their own OAuth Client ID. Currently opt-in in Settings.' }
+      ]
+    },
+    {
+      id: 'print', icon: '🖨️', title: 'Print System',
+      sections: [
+        { h: 'Four Print Functions', list: [
+          'printProgram(programId) — A4 HTML with day/exercise/set tables (3-language labels)',
+          'printNutritionPlan(planId) — A4 HTML with meals × foods table and macro totals',
+          'printOnForm(programId) — A4 overlay on pre-printed JPEG form template (mm-precise positioning)',
+          'printPrivateGym(programId) — opens new window with full calibration UI (rotation, scale, opacity, per-block drag)'
+        ]},
+        { h: 'FORM_DEFAULTS', body: 'Print calibration defaults: offsetX/Y (global mm), clientName/date/sessionNum/weekNum/goals/notes (x, y, w, fontSize each), exerciseTable (rowHeight: 4.3mm, columns: weight1/2/3, reps, sets, name, muscle, num, set, setNum, weight, wtReps, notes), muscleSections (9 sections with startY + maxRows), aerobic (startY, rowHeight, columns), _version: 2.' },
+        { h: 'PG_LAYOUT', body: 'Private Gym branded form layout: fields (lastName, firstName, age, weight, etc.), cols (name, sets, reps, weight), sections (chest, back, front_arm, rear_arm, erectors, abs, shoulders, legs), aero (3 rows with y/h), genderMark. Hebrew-first form with RTL layout.' }
+      ]
+    },
+    {
+      id: 'i18n', icon: '🌐', title: 'Internationalization',
+      sections: [
+        { h: 'Languages', list: [
+          '3 languages: English (en), Russian (ru), Hebrew (he)',
+          'RTL: Hebrew only (dir="rtl" on <html>)',
+          '~1,072 i18n keys per language across 21 top-level groups',
+          't(key, vars) resolves dotted paths, falls back to EN, then empty string',
+          'Variable interpolation: {varName} replaced via regex'
+        ]},
+        { h: 'DOM Translation', body: 'applyI18n(lang) walks DOM: [data-i18n] → textContent, [data-i18n-ph] → placeholder, [data-i18n-html] → innerHTML, [data-i18n-attr="title:key,aria-label:key"] → arbitrary attributes. 25 modal buttons have i18n-aware aria-labels.' },
+        { h: 'RTL Support', body: 'Logical CSS properties used throughout (margin-inline-start, border-inline-end, text-start, text-end). .flip-rtl class applies scaleX(-1) for directional icons. Canvas print does not mirror for Hebrew (known limitation).' }
+      ]
+    },
+    {
+      id: 'pwa', icon: '📱', title: 'PWA Configuration',
+      sections: [
+        { h: 'manifest.json', list: [
+          'name: David King Gym, short_name: DK Gym',
+          'display: standalone, orientation: any',
+          'background_color: #0f172a, theme_color: #10b981',
+          'lang: ru, dir: ltr',
+          'categories: [health, fitness, productivity]',
+          'start_url: ./fitness-crm.html, scope: ./'
+        ]},
+        { h: 'Service Worker (sw.js)', list: [
+          'CACHE_NAME: dk-gym-v5',
+          'APP_SHELL: [/, /fitness-crm.html, /exercise-db.json, /food-db.json, /manifest.json]',
+          'Strategy: cache-first for same-origin, network-first for cross-origin',
+          'On fetch failure: returns Response("Offline", 503) instead of undefined',
+          'Lifecycle: install → cache.addAll → skipWaiting; activate → delete old caches → clients.claim'
+        ]},
+        { h: 'Theme System', body: '28 themes (10 dark + 6 mid + 3 premium-animated + 10 light). Each theme sets data-theme + data-mode attributes. Tailwind dark: variant keys off data-mode="dark". <meta name="theme-color"> updated dynamically to match active theme.' }
+      ]
+    },
+    {
+      id: 'features', icon: '✨', title: 'Unique Features',
+      sections: [
+        { h: 'Auto-Arrange (No competitor offers this)', body: '3 strategies to reorder exercises in a workout day: Compound → Isolation (multi-joint first), Push → Pull → Legs (chest/shoulders/triceps → back/biceps → legs/core), Large → Small muscle (legs/back/chest → shoulders/arms → forearms/calves/core). Uses force and mechanic classification fields.' },
+        { h: 'Classification Filters (First in category)', body: '4 filter dimensions in body map picker: Mechanic (Compound/Isolation), Force (Push/Pull/Static), Level (Beginner/Intermediate/Expert), Category (Strength/Plyometrics/Stretching/etc.). Each chip shows count of matching exercises. Force filter is unique — no competitor exposes push/pull/static.' },
+        { h: 'Recovery Heat-Map with Synergists', body: 'Fitbod-style per-muscle recovery % with 6-day exponential decay. Synergist muscles receive 30% fatigue credit. 3 modes (recovery/7d volume/30d volume) × 3 SVG views (front/back/side). Side view is unique — competitors only have front+back.' },
+        { h: 'Archive System', body: 'Soft-delete for exercises and foods: is_archived flag instead of hard delete. Archive toggle button in toolbar. Restore button per item. Auto-disables when switching screens.' },
+        { h: 'Set Types', body: '5 set types: Normal (default), Warmup (🔥 yellow), Drop (📉 cyan), Failure (💥 red), AMRAP (∞ blue). Cycled by clicking sun icon next to each set.' },
+        { h: 'Grouped Exercise Grid', body: 'Exercises in body map picker grouped by Compound/Isolation sections with sticky headers. Toggle between grouped and flat view. Auto-disables when mechanic filter is active.' },
+        { h: 'Exercise Thumbnails', body: 'Exercise photos shown in: program builder cards, program day preview, live workout exercise headers, and program list day rows (4 thumbnails per day + "+N" overflow).' }
+      ]
+    }
+  ];
+
+  function _renderTechEncyclopedia() {
+    const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
+    const tabsEl = document.getElementById('tech-enc-tabs');
+    const contentEl = document.getElementById('tech-enc-content');
+    if (!tabsEl || !contentEl) return;
+
+    tabsEl.innerHTML = TECH_CHAPTERS.map((ch, i) => {
+      const active = i === _techEncChapter;
+      return `<button class="px-3 py-2 rounded-lg text-xs font-semibold transition whitespace-nowrap ${active ? 'bg-accent text-white' : 'bg-surface-2 text-muted hover:bg-border/30'}" data-tech-tab="${i}">${ch.icon} ${ch.title}</button>`;
+    }).join('');
+    tabsEl.querySelectorAll('[data-tech-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _techEncChapter = parseInt(btn.getAttribute('data-tech-tab'), 10);
+        _renderTechEncyclopedia();
+      });
+    });
+
+    const ch = TECH_CHAPTERS[_techEncChapter];
+    if (!ch) { contentEl.innerHTML = ''; return; }
+    let html = '';
+    ch.sections.forEach(sec => {
+      html += `<h3 class="font-display font-bold text-base mb-2 mt-4 first:mt-0">${sec.h}</h3>`;
+      if (sec.body) {
+        html += `<p class="text-sm text-muted leading-relaxed mb-3">${sec.body}</p>`;
+      }
+      if (sec.list) {
+        html += '<ul class="space-y-1.5 mb-3">';
+        sec.list.forEach(item => {
+          html += `<li class="text-sm text-muted flex items-start gap-2"><span class="text-accent shrink-0 mt-0.5">▸</span><span>${item}</span></li>`;
+        });
+        html += '</ul>';
+      }
+    });
+    contentEl.innerHTML = html;
+  }
+
+  function _exportTechToWhatsApp() {
+    // Build a plain-text summary of the entire technical documentation
+    let text = '📋 *David King Gym CRM — Technical Encyclopedia*\n\n';
+    TECH_CHAPTERS.forEach(ch => {
+      text += `\n*${ch.icon} ${ch.title}*\n`;
+      ch.sections.forEach(sec => {
+        text += `\n_${sec.h}_\n`;
+        if (sec.body) text += sec.body + '\n';
+        if (sec.list) {
+          sec.list.forEach(item => {
+            text += `  • ${item}\n`;
+          });
+        }
+      });
+    });
+    text += '\n\n_Generated by David King Gym CRM — Technical Encyclopedia_';
+
+    // WhatsApp deep link with pre-filled text
+    const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
   }
 
   // === ENCYCLOPEDIA MODULE ===
@@ -23516,6 +23898,8 @@ async function boot() {
         about: 'About',
         encyclopedia: 'Encyclopedia',
         encyclopediaDesc: 'Complete guide for trainers and nutritionists',
+        techEncyclopedia: 'Technical Encyclopedia',
+        techEncyclopediaDesc: 'Complete system architecture documentation',
         version: 'Version',
         fontSize: 'Font size',
         modalSize: 'Modal size',
@@ -24677,6 +25061,8 @@ async function boot() {
         about: 'О приложении',
         encyclopedia: 'Энциклопедия',
         encyclopediaDesc: 'Полный справочник для тренеров и диетологов',
+        techEncyclopedia: 'Техническая энциклопедия',
+        techEncyclopediaDesc: 'Полная документация архитектуры системы',
         version: 'Версия',
         fontSize: 'Размер шрифта',
         modalSize: 'Размер окон',
@@ -25838,6 +26224,8 @@ async function boot() {
         about: 'אודות',
         encyclopedia: 'אנציקלופדיה',
         encyclopediaDesc: 'מדריך מלא למאמנים ותזונאים',
+        techEncyclopedia: 'אנציקלופדיה טכנית',
+        techEncyclopediaDesc: 'תיעוד ארכיטקטורת מערכת מלא',
         version: 'גרסה',
         fontSize: 'גודל גופן',
         modalSize: 'גודל חלונות',
