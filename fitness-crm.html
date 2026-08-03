@@ -21693,262 +21693,765 @@ async function boot() {
   let _techEncChapter = 0;
   const TECH_CHAPTERS = [
     {
-      id: 'architecture', icon: '🏛️', title: 'Architecture',
-      sections: [
-        { h: 'Application Type', body: 'Single-file Progressive Web App (PWA). All HTML, CSS, and JavaScript in one file (~1.7 MB). No build step, no bundler, no transpiler — vanilla ES6+ runs directly in the browser. Tailwind CSS loaded via Play CDN with inline theme configuration.' },
-        { h: 'Module Pattern', body: 'IIFE (Immediately Invoked Function Expression) pattern: const moduleName = (function(){ ... return { publicApi }; })(). No ES module imports. Modules communicate through shared globals (db, t, currentLang, screens, etc.).' },
-        { h: 'External Dependencies', list: [
-          'Tailwind CSS Play CDN (cdn.tailwindcss.com with forms + typography plugins)',
-          'Google Fonts: Inter (UI), Plus Jakarta Sans (display), JetBrains Mono (numeric)',
-          'No JS frameworks — pure vanilla JavaScript'
-        ]},
-        { h: 'PWA Files (sibling files)', list: [
-          'fitness-crm.html — main app (1.7 MB)',
-          'exercise-db.json — 1,660 exercises seed data (3.36 MB)',
-          'food-db.json — 2,172 foods seed data (1.90 MB)',
-          'manifest.json — PWA manifest (40 lines)',
-          'sw.js — Service Worker v5, cache-first strategy (77 lines)',
-          'icons/ — app icons folder'
-        ]},
-        { h: 'Hosting', body: 'GitHub Pages (davidarieli91-gif.github.io/david-king-gym). No backend server — all data stored locally in IndexedDB. Works fully offline after first load.' }
-      ]
+        "id": "architecture",
+        "icon": "🏛️",
+        "title": "Architecture & File Structure",
+        "sections": [
+            {
+                "h": "Application Type",
+                "body": "Single-file Progressive Web App (PWA). All HTML, CSS, and JavaScript live in ONE file called fitness-crm.html (~1.85 MB, ~26,900 lines). No build step, no bundler (Webpack/Rollup), no transpiler (Babel/TypeScript), no framework (React/Vue/Angular). Pure vanilla ES6+ JavaScript runs directly in the browser. Tailwind CSS is loaded via Play CDN (cdn.tailwindcss.com) with inline theme configuration that maps CSS variables to Tailwind color tokens."
+            },
+            {
+                "h": "IIFE Module Pattern",
+                "body": "Every module is an Immediately Invoked Function Expression: const moduleName = (function(){ ... return { publicApi }; })(). This creates a closure for private state while exposing only the public API. Modules communicate through shared globals: db, t, currentLang, screens, _pb, bodyMapPicker, recoveryMap, vault, auth, router, etc. There are NO ES module imports/exports. The execution order in the file determines dependency availability — modules defined earlier are accessible to modules defined later."
+            },
+            {
+                "h": "External Dependencies (3 total)",
+                "list": [
+                    "Tailwind CSS Play CDN — loaded via <script src='https://cdn.tailwindcss.com?plugins=forms,typography'>. An early IIFE (lines 33-41) intercepts console.warn to suppress the Play CDN production warning. The Tailwind config is set inline via tailwind.config = { ... } with custom color tokens (bg, surface, surface-2, border, text, muted, primary, primary-2, accent, success, warning, danger), 3 font families (Inter, Plus Jakarta Sans, JetBrains Mono), custom border radii, and 2 box-shadow definitions.",
+                    "Google Fonts — 3 families preloaded: Inter (400,500,600,700 — UI text), Plus Jakarta Sans (700,800 — display headings), JetBrains Mono (400,700 — numeric/code). Preconnect to fonts.googleapis.com and fonts.gstatic.com for performance.",
+                    "Three.js + OrbitControls + GLTFLoader — loaded from cdnjs.cloudflare.com but currently UNUSED at runtime. Reserved for a future 3D muscle anatomy viewer (muscle_body.glb file exists at 529 KB)."
+                ]
+            },
+            {
+                "h": "PWA Files (6 sibling files in same folder)",
+                "list": [
+                    "fitness-crm.html — main application file (1.85 MB, 26,900 lines). Contains all HTML structure, inline CSS (1500 lines), and all JavaScript (22,000+ lines) in a single <script> block.",
+                    "exercise-db.json — seed data for 1,660 exercises (3.36 MB). Fetched at boot via fetch('exercise-db.json'), parsed by unpackExerciseDB(), and bulk-inserted into IndexedDB exercise_base store. Uses short key names (g, gE, gR, gH, sE, sR, sH, e, eE, eR, eH, nE, nR, nH, t, i, f, lv, mc, cat, syn) to minimize transfer size.",
+                    "food-db.json — seed data for 2,172 foods (1.90 MB). Fetched at boot, bulk-inserted into food_database store. Full key names (name_en, name_he, nutrition{calories,protein,...}, source, category, barcode, brand, image_url).",
+                    "manifest.json — PWA manifest (40 lines). name='David King Gym', short_name='DK Gym', display='standalone', start_url='./fitness-crm.html', scope='./', background_color='#0f172a', theme_color='#10b981', lang='ru', dir='ltr', categories=['health','fitness','productivity']. References icon-512.png and icon-192.png (⚠️ these specific filenames are NOT in the icons/ folder which contains icon1.png through icon5.png).",
+                    "sw.js — Service Worker (77 lines, version 5). Cache name 'dk-gym-v5'. Pre-caches: ['./', './fitness-crm.html', './exercise-db.json', './food-db.json', './manifest.json']. Strategy: cache-first for same-origin requests, network-first for cross-origin (images). On network failure, returns new Response('Offline', {status:503}) to prevent 'Failed to convert value to Response' errors. Lifecycle: install→cache.addAll→skipWaiting, activate→delete old caches→clients.claim, message→SKIP_WAITING.",
+                    "icons/ folder — contains icon1.png through icon5.png (52-105 KB each). manifest.json incorrectly references icon-512.png and icon-192.png. Apple touch icon also references icon-512.png."
+                ]
+            },
+            {
+                "h": "Hosting & Deployment",
+                "body": "GitHub Pages at davidarieli91-gif.github.io/david-king-gym. No backend server, no API, no database server. All data persists locally in IndexedDB. The app works fully offline after first load thanks to the Service Worker caching strategy. Updates are deployed by pushing to the main branch on GitHub, which triggers GitHub Pages rebuild. The Service Worker version bump (CACHE_NAME) forces clients to fetch new files on next visit."
+            },
+            {
+                "h": "File Internal Structure (top to bottom)",
+                "list": [
+                    "Lines 1-41: HTML head, meta tags, Tailwind CDN warning suppressor IIFE",
+                    "Lines 45-82: Tailwind config (colors, fonts, radii, shadows)",
+                    "Lines 84-87: Google Fonts preconnect + link tags",
+                    "Lines 89-1521: Inline <style> block — CSS variables, 26 theme definitions, modal styles, body map CSS, animations, print styles, responsive overrides, UI-size variable definitions",
+                    "Lines 1523-1526: Three.js CDN scripts (unused at runtime)",
+                    "Lines 1529-4229: HTML body — header, aside, main with all 8 screens + 25 modals",
+                    "Lines 4231-4260: Bottom nav (mobile), toast container",
+                    "Lines 4270-4358: Standalone script #1 — Amino Acid runtime calculator (self-contained, runs before main app)",
+                    "Lines 4360-26603: Main application script — all modules, all logic, all wiring (single 'use strict' block)",
+                    "Lines 26612-26689: PWA install + Service Worker registration script",
+                    "Lines 26697-26886: Google Drive backup scaffolding script (requires user OAuth Client ID)",
+                    "Lines 26889-26906: Offline banner script (top red bar when navigator.onLine === false, Esc closes modals)"
+                ]
+            }
+        ]
     },
     {
-      id: 'database', icon: '🗄️', title: 'Database Schema',
-      sections: [
-        { h: 'IndexedDB Configuration', list: [
-          'Database name: fitness_crm_db',
-          'Database version: 9',
-          'Total object stores: 11',
-          'All keyPaths use "id" (UUIDv4) except settings store which uses "key"'
-        ]},
-        { h: 'Object Store: clients', body: 'keyPath: id. Indexes: by_name (name_lower), by_lastActive (last_active), by_goal (goal), by_createdAt (created_at). Fields: id, full_name, name, phone, email, age, weight, height, goal, split, frequency, fitness_level, training_experience, equipment[], training_days[], injuries, notes, photo_url, last_active, created_at, updated_at, plus body composition (body_fat_pct, visceral_fat, muscle_mass, bone_mass, water_pct, metabolic_age) and measurements (neck_cm through calf_cm).' },
-        { h: 'Object Store: exercise_base', body: 'keyPath: id. Indexes: by_group_en/ru/he, by_source, by_equipment_type, by_name_en/ru/he. 1,660 records. Fields: id, source (muscle_motion/private_gym/burnfit), group_canonical, group_en/ru/he, subgroup_en/ru/he, equipment_type/en/ru/he, name_en/ru/he, technique_en/ru/he, images[], folder_path[], gif_url, synergist_muscles[], movement_type, force, level, mechanic, category, is_archived, archived_at, created_at, updated_at.' },
-        { h: 'Object Store: food_database', body: 'keyPath: id. Indexes: by_source, by_barcode. 2,172 records. Fields: id, name_en/he/ru, source, category, image_url, barcode, brand, nutrition{calories,protein,carbs,fat,sugars,sodium,saturated_fat,fiber,vitamin_a through selenium,cholesterol}, is_archived, archived_at.' },
-        { h: 'Object Store: client_programs', body: 'keyPath: id. Indexes: by_clientId, by_status, by_createdAt. Fields: id, client_id, name, split_type, status (active/archived), duration_months, workout_days[{day_letter, name, is_rest_day, day_of_week, exercises[{exercise_id, name, group, sets[{weight, reps, rpe, type, done}], is_superset, superset_partner, rest_sec}]}], created_at, updated_at, archived_at.' },
-        { h: 'Object Store: workout_history', body: 'keyPath: id. Indexes: by_clientId, by_date, by_clientDate. Fields: id, client_id, name, date, duration, total_volume, exercises[{exercise_id, name, group, muscle_group, sets[{weight, reps, rpe, done}]}].' },
-        { h: 'Object Store: nutrition_plans', body: 'keyPath: id. Indexes: by_clientId, by_status. Fields: id, client_id, name, status, target_calories/protein/carbs/fat, meals[{type, labelKey, foods[{id, name_en/he/ru, grams, nutrition}]}], created_at, updated_at.' },
-        { h: 'Other Stores', list: [
-          'workout_templates — reusable workout templates (by_name, by_clientId, by_createdAt, by_tags multiEntry)',
-          'nutrition_history — daily food log entries',
-          'nutrition_templates — reusable meal templates (by_name)',
-          'food_base — legacy food store (by_name_en/he, by_barcode, by_category)',
-          'settings — key/value store for app configuration (no indexes)'
-        ]}
-      ]
+        "id": "database",
+        "icon": "🗄️",
+        "title": "Database Schema (IndexedDB)",
+        "sections": [
+            {
+                "h": "Database Identity",
+                "list": [
+                    "Database name: fitness_crm_db",
+                    "Database version: 9 (DB_VERSION constant)",
+                    "Total object stores: 11 (defined in DB_SCHEMA array, lines 4735-4834)",
+                    "All stores use 'id' as keyPath (UUIDv4) except 'settings' which uses 'key'",
+                    "The db.open() onupgradeneeded handler iterates DB_SCHEMA idempotently — creates missing stores and indexes without dropping existing data"
+                ]
+            },
+            {
+                "h": "Store: clients (keyPath: id)",
+                "body": "Stores client profiles. 4 indexes: by_name (name_lower, for case-insensitive search), by_lastActive (last_active timestamp), by_goal (goal string: hypertrophy/strength/fat_loss/endurance/rehab), by_createdAt (created_at timestamp). Fields: id (UUID), full_name, name (alias), phone, email, age (int), weight (float kg), height (int cm), goal (enum), split (enum: full_body/ab/abc/abcd/abcde/ppl/upper_lower/bro), frequency (int 1-7), fitness_level (beginner/intermediate/advanced), training_experience (int months), equipment (array of strings), training_days (array of ints 0-6), allergies (array of strings), injuries (text), notes (text), photo_url (base64 dataURL, 256px compressed), last_active (timestamp), created_at, updated_at. Body composition: body_fat_pct (float), visceral_fat (int), muscle_mass (float kg), bone_mass (float kg), water_pct (float), metabolic_age (int). Measurements: neck_cm, shoulder_cm, chest_cm, waist_cm, hip_cm, arm_cm, thigh_cm, calf_cm (all float). Files: files array of {id, kind:'photo'|'document', photoType, dataUrl, mime, size, w, h, name, created_at}."
+            },
+            {
+                "h": "Store: exercise_base (keyPath: id)",
+                "body": "Stores 1,660 exercises. 8 indexes: by_group_en/ru/he (group_canonical in each language), by_source (muscle_motion/private_gym/burnfit), by_equipment_type (lowercase equipment), by_name_en/ru/he (name in each language). Fields: id (format: mm_<slug>_<index>, pg_<slug>, bf_<slug>), source (mm/pg/bf), group_canonical (chest/back/shoulders/elbow_flexors/triceps/forearms/abdominals/legs/stretching/warmup/calisthenics), group_en/ru/he (translated group name), subgroup_en/ru/he (translated subgroup name), equipment_type (lowercase: barbell/dumbbell/cable/machine/bodyweight/kettlebell/band/ez_bar/plate/other), equipment_en/ru/he (translated equipment), name_en/ru/he (3-language exercise name), technique_en/ru/he (3-language step-by-step technique, pipe-separated steps), images (array of relative paths like 'images/mm_3_4_Sit-Up_0.jpg'), folder_path (3-element array: [group, subgroup_lower, equipment_lower]), gif_url (first image path or empty), synergist_muscles (array of canonical group keys), movement_type (compound/isolation/stretching), force (push/pull/static, only for MM exercises), level (beginner/intermediate/expert, only for MM), mechanic (compound/isolation, derived from movement_type), category (strength/plyometrics/stretching/powerlifting/olympic weightlifting/strongman/cardio, only for MM), is_archived (boolean, default false), archived_at (timestamp), created_at, updated_at."
+            },
+            {
+                "h": "Store: food_database (keyPath: id)",
+                "body": "Stores 2,172 foods. 2 indexes: by_source, by_barcode. Fields: id (off_<barcode>, usda_<id>, fd_<slug>, or custom_<slug>), name_en/he/ru (3-language names), source (USDA_SR_Legendacy/OpenFoodFacts_IL/OpenFoodFacts_Global/FoodsDictionary_IL), category (one of 21: bakery/dairy/meat/fish/fruit/vegetable/legumes/grains/nuts/greens/vegan/sauces/sweets/drinks/israeli/international/oils/eggs/protein/baby/other), image_url (absolute URL to OpenFoodFacts images or empty), barcode (EAN-13 string or empty), brand (string), nutrition object with: calories (int kcal), protein/carbs/fat (float g), sugars/sodium/saturated_fat/fiber (float g), then 13 vitamins (vitamin_a mcg, vitamin_c mg, vitamin_d mcg, vitamin_e mg, vitamin_k mcg, vitamin_b1 mg, vitamin_b2 mg, vitamin_b3 mg, vitamin_b5 mg, vitamin_b6 mg, vitamin_b12 mcg, folate mcg, choline mg), 10 minerals (calcium mg, iron mg, magnesium mg, phosphorus mg, potassium mg, zinc mg, copper mg, manganese mg, selenium mcg, sodium mg — already listed), cholesterol mg, is_archived (boolean), archived_at, created_at."
+            },
+            {
+                "h": "Store: client_programs (keyPath: id)",
+                "body": "Stores workout programs. 3 indexes: by_clientId, by_status (active/archived), by_createdAt. Fields: id, client_id, name (string), split_type (full_body/ab/abc/abcd/abcde/ppl/upper_lower/bro), status (active/archived), duration_months (int), workout_days (array of day objects). Each day: {day_letter (A/B/C/D/E), name (string), is_rest_day (boolean), day_of_week (int 0-6 or null), exercises (array of exercise entries)}. Each exercise entry: {exercise_id, name, group, sets (array of {weight, reps, rpe, type, done}), is_superset (boolean), superset_partner (string name), rest_sec (int, default 90)}. Also: created_at, updated_at, archived_at, notes."
+            },
+            {
+                "h": "Store: workout_history (keyPath: id)",
+                "body": "Stores completed workout sessions. 3 indexes: by_clientId, by_date, by_clientDate (compound [client_id, date]). Fields: id, client_id, name (string), date (timestamp), duration (int seconds), total_volume (sum of weight×reps across all sets), exercises (array of {exercise_id, name, group, muscle_group, sets (array of {weight, reps, rpe, done})})."
+            },
+            {
+                "h": "Store: nutrition_plans (keyPath: id)",
+                "body": "Stores meal plans. 2 indexes: by_clientId, by_status. Fields: id, client_id, name, status (active/archived), target_calories (int), target_protein/carbs/fat (int grams), meals (array of {type (breakfast/snack1/lunch/snack2/dinner/before_sleep), labelKey (i18n key), foods (array of {id, name_en/he/ru, grams (int), nutrition (full nutrition object snapshot)})}), created_at, updated_at."
+            },
+            {
+                "h": "Other 5 Stores",
+                "list": [
+                    "workout_templates — reusable workout templates. 4 indexes: by_name (name_lower), by_clientId, by_createdAt, by_tags (multiEntry). Fields: id, name, client_id, tags (array), exercises (same structure as program day exercises), created_at.",
+                    "nutrition_history — daily food log entries. 3 indexes: by_clientId, by_date, by_clientDate (compound). Fields: id, client_id, date, meals (array with foods), targets (calories/protein/carbs/fat).",
+                    "nutrition_templates — reusable meal templates. 1 index: by_name. Fields: id, name, meals (array).",
+                    "food_base — legacy food store (superseded by food_database). 4 indexes: by_name_en, by_name_he, by_barcode, by_category.",
+                    "settings — key/value store for app configuration (no indexes). Keys: lang, theme, font_scale, modal_scale, ui_sizes, print_calibration, seeded_exercise_base_v17, seeded_food_db_v52, auth_password_hash, auth_password_salt, ai_config, bm_favorites, workout_draft, food_cat_label_<cat>, food_cat_icon_<cat>, exercise_folder_labels, exercise_empty_folders, exercise_custom_group_order, texture_opacity, texture_kind, branding."
+                ]
+            },
+            {
+                "h": "db Module API (lines 4851-5069)",
+                "body": "Promise-based IndexedDB wrapper. Functions: open() (cached, idempotent), get(store, key) → Promise<record|undefined>, all(store, {index, range, limit}) → Promise<array>, find(store, indexName, value) → Promise<array>, put(store, obj) (auto-stamps created_at/updated_at, auto-generates UUID if id missing), bulkPut(store, arr) (single transaction), del(store, key), clear(store), count(store) → Promise<int>, wipe() (deletes entire database), raw() (returns raw IDBDatabase handle), storeNames() (returns array), uuid() (RFC4122 v4 via crypto.randomUUID or Math.random fallback)."
+            },
+            {
+                "h": "Seeding Pipeline (boot sequence)",
+                "body": "1. db.open() with wipe-and-retry on error. 2. ensureDefaultSettings() writes lang=en and theme=dark if missing. 3. seedExerciseBase(false): if seeded_exercise_base_v17 flag missing OR force=true → fetch('exercise-db.json'), parse via unpackExerciseDB(), bulkPut 1,660 records into exercise_base, set v17 flag. 4. seedFoodDatabase(false): if seeded_food_db_v52 flag missing → fetch('food-db.json'), bulkPut 2,172 records into food_database, set v52 flag. 5. nutritionPlans.loadFoods(), foodDatabase.load(), nutritionTemplates.load(), loadCustomCats(). 6. Read persisted lang+theme from settings, apply. 7. Wire all UI. 8. Route to login or dashboard based on auth.isPasswordSet()."
+            }
+        ]
     },
     {
-      id: 'modules', icon: '🔧', title: 'Module Architecture',
-      sections: [
-        { h: 'Core Modules (top-level IIFEs)', list: [
-          'db — Promise-based IndexedDB wrapper (open, get, all, find, put, bulkPut, del, clear, count, wipe, uuid)',
-          'auth — PBKDF2 password hashing + in-memory session (setPassword, verifyPassword, lock)',
-          'backup — JSON export/import with format validation',
-          'router — SPA screen switcher (show, current)',
-          'focusTrap — MutationObserver-based modal focus management',
-          'backTrap — Android back-button modal trap (5 sentinel states)',
-          'programImage — Canvas-based branded PNG generator for WhatsApp sharing',
-          'vault — Image compression (canvas→JPEG) + file→base64',
-          'restTimer — Floating countdown with vibrate + Web Audio beep',
-          'openFoodFacts — OFF API client (search + barcode)',
-          'bodyMapPicker — SVG body map modal with muscle-click filtering + classification chips',
-          'recoveryMap — Per-muscle recovery %, 7d/30d volume, synergist credit',
-          'generator — Rule-based workout program generator (injury-aware)',
-          'nutritionGenerator — BMR/TDEE-based meal-plan generator',
-          'nutritionPlans — Plan CRUD + food picker + micronutrient analysis',
-          'foodDatabase — Food DB screen (tree, search, source filter, edit, archive)',
-          'nutritionTemplates — Reusable meal templates CRUD'
-        ]},
-        { h: 'Screen Modules (screens.*)', list: [
-          'screens.dashboard — client CRM grid (search, add, photo, goal badges)',
-          'screens.profile — client detail + programs + nutrition plans + files + print',
-          'screens.analytics — activity heatmap calendar + KPIs',
-          'screens.exercises — exercise DB tree view (3-level: group → subgroup → equipment)',
-          'screens.templates — workout templates list',
-          'screens.history — workout history log',
-          'screens.liveWorkout — active session (set table, duration timer, finish→history)',
-          'screens.nutrition — daily food log (macro rings, meal sections, food picker)'
-        ]},
-        { h: 'Global Helpers', list: [
-          't(key, vars) — i18n translator (returns empty string for missing keys)',
-          'currentLang() — returns current language code (en/ru/he)',
-          'escapeHTML/escHTML/esc/escapeAttr/escAttr — HTML escaping (all aliases of one function)',
-          'setText(id, val) — set element textContent by ID',
-          'avatarGradient(name) — deterministic HSL gradient from name hash',
-          'initials(name) — extract initials from full name',
-          'goalBadgeClass(goal) — Tailwind classes for goal badge color',
-          'formatDuration(seconds) — M:SS time formatting',
-          'buildExerciseIndex(cache) — Map<id, exercise> for O(1) lookups',
-          'globalExName(ex) / globalExGroup(ex) / globalExImage(ex) — localized exercise data by ID'
-        ]}
-      ]
+        "id": "modules",
+        "icon": "🔧",
+        "title": "Module Architecture (All 30+ Modules)",
+        "sections": [
+            {
+                "h": "Core Infrastructure Modules (7)",
+                "list": [
+                    "db (lines 4851-5069) — IndexedDB wrapper. Exports: open, get, all, find, put, bulkPut, del, clear, count, wipe, raw, storeNames, uuid, SCHEMA, NAME, VERSION.",
+                    "auth (lines 5324-5511) — Password management. Exports: isPasswordSet, setPassword, verifyPassword, isUnlocked, lock. Uses PBKDF2 (100k iterations, SHA-256, 16-byte salt). Session is in-memory only (_state.unlocked), no persistent token. Old SHA-256 passwords auto-upgraded on first login.",
+                    "backup (lines 5139-5322) — Export/import. Exports: exportData, importData, serialize, validate, FORMAT_VERSION. JSON format with meta + data sections. Validates db_name match and format version on import.",
+                    "router (lines 5564-5640) — SPA screen switcher. Exports: show, current. On show: disables archive modes, closes all modals, hides non-matching screens, sets aria-current on nav buttons, calls refresh hooks.",
+                    "focusTrap (lines 5674-5774) — Modal accessibility. Exports: init. Uses MutationObserver to detect modal open/close. On open: moves focus to first focusable child. Traps Tab/Shift+Tab inside modal. On close: restores focus to trigger element.",
+                    "backTrap (lines 5776-5947) — Android back button. Exports: init, anyModalOpen, topmostModal. Pushes 5 sentinel history entries on init. On popstate: closes topmost modal or navigates back or asks exit confirmation.",
+                    "programImage (lines 6078-6457) — Canvas PNG generator. Exports: renderWorkoutProgram, renderNutritionPlan. Draws branded 1080px-wide canvas with header, day bars, exercise tables. Returns PNG blob for WhatsApp sharing."
+                ]
+            },
+            {
+                "h": "Utility Modules (4)",
+                "list": [
+                    "vault (lines 6934-7071) — Image compression. Exports: compressImage, readFileAsBase64, addPhoto, addDocument, deleteFile. Canvas-based JPEG compression at 0.78 quality, max 1280px longest edge. Client photos compressed to 256px at 0.80 quality.",
+                    "restTimer (lines 12349-12424) — Floating countdown. Exports: start, stop, skip, add30. Web Audio API 880Hz sine beep on complete. Vibrate pattern on mobile.",
+                    "openFoodFacts (lines 13268-13325) — OFF API client. Exports: search, getByBarcode, normalize. Searches world.openfoodfacts.org API, normalizes results to food_database format.",
+                    "llmCall (lines 5976-6072) — AI integration. Two backends: (1) Node.js child_process executing 'z-ai' CLI, (2) browser fetch to OpenAI-compatible endpoint with Bearer auth. 90-second timeout via AbortController."
+                ]
+            },
+            {
+                "h": "Feature Modules (6)",
+                "list": [
+                    "bodyMapPicker (lines 13930-15050) — SVG body map modal with exercise selection. Exports: open, close. State: _cache, _activeGroup, _activeSubgroup, _expandedGroups, _equipFilter, _view, _sourceFilter, _tab, _callback, _favorites, _recent, _classFilter, _groupBy. Renders 3 SVG views (front/back/side), classification chips (4 dimensions), grouped exercise grid (Compound/Isolation sections), favorites/recent tabs.",
+                    "recoveryMap (lines 15052-15512) — Per-muscle recovery analysis. Exports: open, close, wire, computeForClient. Constants: RECOVERY_TAU_DAYS=3.0, SYNERGIST_CREDIT=0.30. 3 modes (recovery/7d/30d) × 3 SVG views. computeForClient walks workout_history, builds volume-per-day-per-muscle map, applies decay formula, returns recovery% for all 11 muscle groups.",
+                    "generator (lines 15526-16458) — Rule-based workout program generator. Exports: generate, openModal, autoGenerateProgram, llmGenerateProgram. 11-step pipeline: goal→scheme, session time→exercise count, equipment filter, injury filter (19 injury types with keyword blocklists), BMI personalization, age adjustment, split structure, volume target, day-by-day exercise selection.",
+                    "nutritionGenerator (lines 16459-17595) — BMR/TDEE meal plan generator. Exports: openQuestionnaire, generatePlan, llmGeneratePlan, calcBMR, calcTDEE, calcTargetCalories. Mifflin-St Jeor + Katch-McArdle BMR blend. 5 activity multipliers. 9 diet profiles (balanced/low_carb/keto/vegetarian/vegan/mediterranean/intermittent/halal/kosher). Food selection: allergy filter → disliked filter → anchor→carb→vegfruit→fat→other bucket strategy.",
+                    "nutritionPlans (lines 17868-19205) — Nutrition plan CRUD + food picker + micronutrient analysis. Exports: loadFoods, loadPlans, openCreator, openEditor, savePlan, renderFoodResults, openMicronutrientAnalysis, suggestFoodsForGaps, scanBarcode, lookupBarcode, switchMicroTab, renderAminoAcids, adjustMacro, scaleAllPortions.",
+                    "foodDatabase (lines 19206-19530) — Food DB screen. Exports: load, refresh, setSearch, setSource, setCategoryFilter, openCreate, toggleEditMode, addCategory, toggleArchiveMode, restoreFood."
+                ]
+            },
+            {
+                "h": "Screen Modules (8, registered as screens.*)",
+                "list": [
+                    "screens.dashboard (lines 6580-6919) — Client CRM grid. State: _clients, _filtered, _search, _sortBy, _goalFilter, _pendingClientPhoto. Functions: load, applyFilters, render, cardHTML, openCreate, openEdit, closeModal, saveFromForm, deleteFromForm, openEditById.",
+                    "screens.profile (lines 7079-10296) — Client detail + program builder + print. State: _clientId, _client, _pb. The LARGEST module (~3200 lines). Contains: loadPrograms, openProgramCreator, openProgramEditor, renderBuilder, pbAddExercise, pbAutoArrange, pbMoveExercise, pbSave, printProgram, printNutritionPlan, printOnForm, printPrivateGym, loadPrintSettings, savePrintSettings, FORM_DEFAULTS, PG_LAYOUT, autoGenerateProgram, llmGenerateProgram.",
+                    "screens.analytics (lines 10310-10646) — Activity heatmap. State: _clientId, _range, _clients. Functions: loadClient, setRange, computeMetrics, computeStreak, computeAdherence, renderMetrics, renderCalendar (3-intensity heatmap), renderVolume.",
+                    "screens.exercises (lines 10653-11970) — Exercise DB tree browser. 3-level folder structure. Supports: search, source filter, edit mode (rename/move/delete folders), archive mode, body map panel, custom group ordering, drag-drop.",
+                    "screens.templates (lines 11973-12114) — Workout templates list. Functions: load, render, apply, saveAsTemplate, openPickerForClient.",
+                    "screens.history (lines 12116-12342) — Workout history log. Functions: load, setFilter, showDetail, reuseAsWorkout.",
+                    "screens.liveWorkout (lines 12432-13266) — Active training session. State: _workout, _durationInterval, _autosaveInterval, _exerciseCache, _exMap. Functions: start, startFromTemplate, startFromProgram, render, exerciseHTML, setRowHTML, wireExerciseEvents, finish, saveDraft, checkDraft.",
+                    "screens.nutrition (lines 13340-13930) — Daily food log. State: _clientId, _date, _log, _clients, _searchSource, _pendingFood. Functions: selectClient, selectDate, loadLog, saveLog, render (rings + meals + totals), openFoodSearch, performSearch, openPortionModal, openTargets, openCustomFood."
+                ]
+            },
+            {
+                "h": "Global Helper Functions (12)",
+                "list": [
+                    "t(key, vars) — i18n translator. Resolves dotted path against I18N[_lang], falls back to I18N.en, then returns '' (empty string). Variable interpolation: {varName} replaced via regex.",
+                    "currentLang() — returns current language code (en/ru/he).",
+                    "escapeHTML(s) / escHTML(s) / esc(s) / escapeAttr(s) / escAttr(s) — all aliases of one function. Replaces & < > \" ' with HTML entities.",
+                    "setText(id, val) — sets element.textContent by ID.",
+                    "avatarGradient(name) — deterministic HSL gradient from name hash. Returns 'linear-gradient(135deg, hsl(H1,65%,55%), hsl(H2,70%,60%))'.",
+                    "initials(name) — extracts first letter of first and last word.",
+                    "goalBadgeClass(goal) — returns Tailwind class string per goal (hypertrophy=primary, strength=danger, fat_loss=warning, endurance=accent, rehab=success).",
+                    "formatDuration(seconds) — formats as M:SS (e.g., 95 → '1:35').",
+                    "buildExerciseIndex(cache) — creates Map<id, exercise> from array for O(1) lookups.",
+                    "globalExName(ex) — localized exercise name by exercise_id (tries _pb._exMap first, then _profileExMap).",
+                    "globalExGroup(ex) — localized exercise group by exercise_id.",
+                    "globalExImage(ex) — first image URL by exercise_id."
+                ]
+            }
+        ]
     },
     {
-      id: 'screens', icon: '📱', title: 'Screens & Modals',
-      sections: [
-        { h: 'Screens (data-screen attributes)', list: [
-          'login — brand + password create/enter form',
-          'dashboard — client CRM grid with search and goal filter',
-          'profile — single client detail (header, body stats, programs, nutrition, files)',
-          'workouts — 3 sub-tabs: Exercises DB, Templates, History',
-          'live-workout — active training session with set table and timer',
-          'nutrition — daily food log with macro rings and meal sections',
-          'analytics — activity heatmap calendar and KPIs',
-          'settings — theme, language, backup, system info, encyclopedia'
-        ]},
-        { h: 'Modals (24 total)', body: 'All modals have role="dialog" aria-modal="true" and use focus trap. Key modals: program-builder-modal (full program builder with drag-drop), bodymap-picker-modal (SVG body map + exercise grid), recovery-map-modal (3 modes × 3 views), auto-arrange-modal (3 strategies), micronutrient-modal (vitamins/minerals/amino tabs), food-picker-modal (4 macro-group folders), exercise-modal (view/edit/create), client-modal (full profile form), encyclopedia-modal (8-chapter guide), tech-encyclopedia-modal (this document).' }
-      ]
+        "id": "bodymap",
+        "icon": "🗺️",
+        "title": "Body Map & Classification System",
+        "sections": [
+            {
+                "h": "SVG Body Map — 3 Views, 85 Zones Total",
+                "body": "Three hand-coded SVG anatomical figures (no external image assets). Each muscle zone is a <path class='bm-muscle' data-group='...' data-subgroup='...'> with click handler. SVGs are stored as template literal strings (SVG_FRONT, SVG_BACK, SVG_SIDE) and also exposed globally as window.BM_SVG_FRONT/BACK/SIDE for reuse by recovery map and exercises screen body map."
+            },
+            {
+                "h": "SVG_FRONT (36 zones, viewBox 0 0 160 360)",
+                "list": [
+                    "back/Neck ×2 (sternocleidomastoid, left+right)",
+                    "back/Trapezius ×1 (upper traps visible from front)",
+                    "shoulders/Front ×2 (anterior deltoids, left+right)",
+                    "shoulders/Middle ×2 (lateral deltoids, ellipses)",
+                    "chest/Upper ×2 (upper pectoralis, clavicular head)",
+                    "chest/Middle ×2 (mid-pec)",
+                    "chest/Lower ×2 (lower pec)",
+                    "elbow_flexors/Biceps ×2",
+                    "elbow_flexors/Brachialis ×2",
+                    "forearms/Wrist Curls ×2 (flexors)",
+                    "abdominals/Upper ×2 (upper rectus abdominis)",
+                    "abdominals/Lower ×1 (lower rectus)",
+                    "abdominals/Obliques ×2",
+                    "back/Lats ×2 (serratus/lat spread, stroke-only paths)",
+                    "legs/Quadriceps ×4 (2 main + 2 vastus lateralis detail)",
+                    "legs/Adductors ×2 (inner thigh)",
+                    "legs/Calves ×2 (tibialis anterior, shin)",
+                    "legs/Hip Flexors ×2"
+                ]
+            },
+            {
+                "h": "SVG_BACK (27 zones, viewBox 0 0 160 360)",
+                "list": [
+                    "back/Trapezius ×3 (upper, middle, lower — 3 separate paths)",
+                    "shoulders/Rear ×2 (posterior deltoids)",
+                    "back/Lats ×2 (latissimus dorsi)",
+                    "back/Middle Back ×1 (rhomboids)",
+                    "shoulders/Rotator Cuff ×2 (infraspinatus/teres minor)",
+                    "triceps/Compound ×2 (all 3 heads)",
+                    "forearms/Wrist Curls ×2 (extensors from back)",
+                    "back/Lower Back ×3 (erector spinae, 3 detail paths)",
+                    "legs/Glutes ×2 (gluteus maximus, ellipses)",
+                    "legs/Hamstrings ×4 (2 main + 2 detail)",
+                    "legs/Calves ×4 (2 gastrocnemius + 2 soleus)"
+                ]
+            },
+            {
+                "h": "SVG_SIDE (22 zones, viewBox 0 0 200 360)",
+                "list": [
+                    "back/Neck ×1, back/Trapezius ×1",
+                    "shoulders/Middle ×1 (ellipse), shoulders/Front ×1, shoulders/Rear ×1",
+                    "chest/Upper ×1, chest/Middle ×1, chest/Lower ×1",
+                    "back/Lats ×1, elbow_flexors/Biceps ×1, triceps/Compound ×1",
+                    "forearms/Wrist Curls ×1",
+                    "abdominals/Upper ×1, abdominals/Lower ×1, abdominals/Obliques ×1",
+                    "back/Lower Back ×1",
+                    "legs/Glutes ×1 (ellipse), legs/Hip Flexors ×1",
+                    "legs/Quadriceps ×1, legs/Hamstrings ×1",
+                    "legs/Calves ×2 (gastrocnemius + tibialis)"
+                ]
+            },
+            {
+                "h": "Muscle Click Filtering (step-by-step)",
+                "body": "1. User clicks any .bm-muscle path in #bm-svg-container. 2. Click handler reads data-group and data-subgroup attributes. 3. If currently active group+subgroup matches clicked → clears both (toggle off). 4. Else sets _activeGroup=group, _activeSubgroup=subgroup, adds group to _expandedGroups (auto-expands tree). 5. Calls 5 re-render functions: renderBodySVG (highlights active muscle at 0.85 opacity, dims non-matching to 0.2), renderGroupTree (highlights active folder), renderEquipChips (recomputes equipment chips for filtered set), renderClassChips (recomputes classification chips), renderExerciseGrid (filters exercise list)."
+            },
+            {
+                "h": "Classification System (4 dimensions)",
+                "list": [
+                    "Mechanic: Compound (multi-joint) / Isolation (single-joint). Applied to ALL 1,660 exercises (derived from movement_type field). 375 compound, 1,282 isolation, 3 stretching.",
+                    "Force: Push / Pull / Static. Only for MM exercises (844/873 have it). push=369, pull=371, static=104. UNIQUE to this app — no competitor exposes push/pull/static as a filter.",
+                    "Level: Beginner / Intermediate / Expert. Only for MM exercises (873/873 have it). beginner=523, intermediate=293, expert=57.",
+                    "Category: Strength / Plyometrics / Stretching / Powerlifting / Olympic Weightlifting / Strongman / Cardio. Only for MM exercises (873/873). strength=581, stretching=123, plyometrics=61, powerlifting=38, olympic weightlifting=35, strongman=21, cardio=14."
+                ]
+            },
+            {
+                "h": "Classification Chips Rendering (step-by-step)",
+                "body": "1. Start with cache filtered by source/group/subgroup/equipment (NOT class filter itself — avoids feedback loop). 2. For each CLASS_DIMENSIONS (mechanic, force, level, category): count exercises per value in the base filtered set. 3. If total count for the dimension is 0 → skip entirely (don't render row). 4. Render row: dimension emoji + label + 'All' chip (active if filter is null) + one chip per value with count badge (hidden if count=0). 5. Click handler sets _classFilter[key] = value (or null for 'All'), re-renders chips + grid."
+            },
+            {
+                "h": "Grouped Exercise Grid (Compound/Isolation sections)",
+                "body": "When _groupBy='mechanic' AND mechanic filter not active AND filtered set has ≥2 distinct mechanic values: 1. Create 3 sections (compound/isolation/other) with emoji icons (⚙️🎯📦) and localized labels. 2. Sort each section alphabetically by current-language name. 3. Allocate VISIBLE_CAP=200 across present sections proportionally (min 30 each). 4. Render section header (sticky, colored left border) + grid of cards + '+N more — refine filter' hint if capped. Otherwise: flat list, cap at 200, 'Show more' button."
+            },
+            {
+                "h": "Favorites & Recent Tabs",
+                "body": "Favorites: stored as array of exercise IDs in settings.bm_favorites. Star button on each card toggles favorite. Favorites tab shows only favorited exercises. Recent: computed by scanning workout_history (sorted by date desc), collecting first 20 unique exercise IDs. Recent tab shows those 20 exercises. Both tabs re-render on open()."
+            },
+            {
+                "h": "GROUP_COLORS (11 muscle group colors)",
+                "list": [
+                    "legs: #f97316 (orange), chest: #ef4444 (red), back: #3b82f6 (blue)",
+                    "shoulders: #f59e0b (amber), elbow_flexors: #8b5cf6 (purple), triceps: #06b6d4 (cyan)",
+                    "forearms: #10b981 (green), abdominals: #a855f7 (magenta)",
+                    "stretching: #d946ef (fuchsia), warmup: #fbbf24 (yellow), calisthenics: #64748b (slate)"
+                ]
+            }
+        ]
     },
     {
-      id: 'bodymap', icon: '🗺️', title: 'Body Map & Classification',
-      sections: [
-        { h: 'SVG Body Map', list: [
-          '3 hand-coded SVG views: Front (36 zones), Back (27 zones), Side (22 zones) = 85 total',
-          'Each zone: <path class="bm-muscle" data-group="..." data-subgroup="..."> with click handler',
-          'Muscles color-coded by group using GROUP_COLORS (11 colors)',
-          'Active muscle highlighted with .active class (brightness + drop-shadow)',
-          'Available in: bodyMapPicker modal (program builder), exercises screen body map panel, recovery map modal'
-        ]},
-        { h: 'Classification System', list: [
-          'GROUP_I18N: 11 muscle groups (chest, back, shoulders, elbow_flexors, triceps, forearms, abdominals, legs, stretching, warmup, calisthenics)',
-          'SUBGROUP_I18N: 33 subgroups (Upper, Middle, Lower, Front, Rear, Biceps, Brachialis, Trapezius, Lats, etc.)',
-          'EQUIPMENT_I18N: 10 equipment types (Barbell, Dumbbell, Cable, Machine, Bodyweight, Kettlebell, Band, EZ-Bar, Plate, Other)',
-          'CLASS_DIMENSIONS: 4 filter dimensions — Mechanic (Compound/Isolation), Force (Push/Pull/Static), Level (Beginner/Intermediate/Expert), Category (Strength/Plyometrics/Stretching/Powerlifting/Olympic/Strongman/Cardio)'
-        ]},
-        { h: 'Exercise Sources', list: [
-          'muscle_motion (mm): 873 exercises — fully classified (force, level, mechanic, category, synergists)',
-          'private_gym (pg): 463 exercises — no classification fields (null)',
-          'burnfit (bf): 324 exercises — no classification fields (null)',
-          'Total: 1,660 exercises with 3-language names (EN/RU/HE), photos, and technique descriptions'
-        ]}
-      ]
+        "id": "nutrition",
+        "icon": "🥗",
+        "title": "Nutrition System (Complete)",
+        "sections": [
+            {
+                "h": "Food Database (2,172 foods, 4 sources)",
+                "list": [
+                    "USDA_SR_Legacy: 1,000 foods — US Department of Agriculture standard reference",
+                    "OpenFoodFacts_IL: 867 foods — Israeli products from OpenFoodFacts",
+                    "FoodsDictionary_IL: 241 foods — Israeli food dictionary",
+                    "OpenFoodFacts_Global: 64 foods — international products"
+                ]
+            },
+            {
+                "h": "21 Food Categories",
+                "list": [
+                    "bakery 🍞, dairy 🥛, meat 🥩, fish 🐟, fruit 🍎, vegetable 🥕,",
+                    "legumes 🫘, grains 🌾, nuts 🥜, greens 🥬, vegan 🌱, sauces 🧂,",
+                    "sweets 🍫, drinks 🥤, israeli 🫓, international 🌍, oils 🫒,",
+                    "eggs 🥚, protein 💪, baby 🍼, other ⭐"
+                ]
+            },
+            {
+                "h": "MACRO_GROUPS (4 top-level folders in food picker)",
+                "body": "Foods are organized into 4 macro-group folders in the food picker. Each group has an emoji icon, 3-language label, and a list of food categories that belong to it. getMacroGroup(food) determines which folder a food goes into using a hybrid rule: if protein ≥30% of calories → proteins; if fat ≥45% of calories → fats; if carbs ≥40% of calories → carbs; else falls back to category-based lookup."
+            },
+            {
+                "h": "MACRO_GROUPS structure",
+                "list": [
+                    "proteins (🥩): meat, fish, eggs, dairy, legumes, protein, greens",
+                    "carbohydrates (🍞): grains, bakery, fruit, vegetable, sweets, drinks",
+                    "fats (🥜): nuts, oils, sauces",
+                    "other (⭐): vegan, israeli, international, baby, other"
+                ]
+            },
+            {
+                "h": "Micronutrient Analysis (25 nutrients)",
+                "body": "MICRONUTRIENT_RDI defines 25 nutrients with Recommended Daily Intake values. Each nutrient has: rdi (numeric value), unit (mg/mcg/g), label (3-language), group (vitamin/mineral/other), desc (3-language description), isLimit (boolean — for sodium and cholesterol which have upper limits, not targets)."
+            },
+            {
+                "h": "25 Nutrients (full list)",
+                "list": [
+                    "Vitamins (13): A (800mcg), C (85mg), D (15mcg), E (15mg), K (105mcg), B1 (1.15mg), B2 (1.2mg), B3 (15mg), B5 (5mg), B6 (1.5mg), B12 (2.4mcg), folate (400mcg), choline (500mg)",
+                    "Minerals (10): calcium (1000mg), iron (13mg), magnesium (350mg), phosphorus (700mg), potassium (3000mg), sodium (2300mg, isLimit), zinc (10mg), copper (0.9mg), manganese (2mg), selenium (55mcg)",
+                    "Other (2): fiber (28g), cholesterol (300mg, isLimit)"
+                ]
+            },
+            {
+                "h": "calculateMicronutrients(plan) — step-by-step",
+                "body": "1. Initialize 25 nutrient totals to 0. 2. Iterate plan.meals[].foods[]. 3. For each food with .nutrition: for each of 25 RDI keys, add nutrition[key] × (grams/100) to totals. 4. Compute coverage % per nutrient: (total / rdi) × 100. 5. Build missing[] array of keys with coverage <50%, sorted by coverage ascending. 6. Return {totals, coverage, missing, foodCount}."
+            },
+            {
+                "h": "Amino Acid Subsystem",
+                "body": "9 essential amino acids with RDA values (mg per kg body weight per day): histidine 10, isoleucine 20, leucine 39, lysine 30, methionine 15, phenylalanine 25, threonine 15, tryptophan 4, valine 26. 21 food-category profiles (AA_PROFILES) provide mg of each AA per gram of protein in that category. getFoodAminoAcids(food) multiplies nutrition.protein × profile × 10 to get mg per 100g. calcAATargets(weightKg) multiplies RDA × body weight. sumAminoAcids(items) scales by portion size and sums. renderAAPanel returns HTML with 3-column grid of progress bars."
+            },
+            {
+                "h": "Suggest Foods for Gaps",
+                "body": "suggestFoodsForGaps(): 1. Calculate micronutrients. 2. If no gaps → toast success. 3. Take top 3 most deficient nutrients. 4. For each: findFoodsRichIn(nutrientKey, 5, excludeIds) — sorts _foods by nutrition[key] descending, returns top 5 not already in plan. 5. Render suggestion cards with food name, category, value per 100g, calories, click-to-add button. 6. Clicking adds food to first meal via food picker callback."
+            },
+            {
+                "h": "Food Picker Rendering (macro-group tree)",
+                "body": "renderFoodResults(query): 1. If MACRO_GROUPS + getMacroGroup available → build 2-level tree (macro group → category → foods). 2. Iterate macroOrder = [proteins, carbs, fats, other]. 3. For each macro group: render expandable header (chevron + emoji + label + count). 4. When expanded: show category sub-folders (chevron + emoji + label + count). 5. When category expanded: show food rows (image + name + macro summary + view eye-icon + source badge + click-to-pick). 6. When searching: auto-expand all categories. 7. Click food → _fpCallback(food, 100) → closes picker."
+            },
+            {
+                "h": "Barcode Scanner",
+                "body": "scanBarcode(): checks if BarcodeDetector API is available (Chrome on Android). If yes: creates scanner modal with live camera feed, animated scan line, corner brackets. Scans every 300ms for EAN-13/EAN-8/Code-128/Code-39/UPC-A/UPC-E. On detection: lookupBarcode(code). If no BarcodeDetector: prompt for manual entry. lookupBarcode: searches local food_database by barcode, then queries OpenFoodFacts API. If found in OFF: creates new food record, saves to database, adds to meal."
+            }
+        ]
     },
     {
-      id: 'nutrition', icon: '🥗', title: 'Nutrition System',
-      sections: [
-        { h: 'Food Database', list: [
-          '2,172 foods from 4 sources: USDA_SR_Legacy (1000), OpenFoodFacts_IL (867), FoodsDictionary_IL (241), OpenFoodFacts_Global (64)',
-          '21 food categories: bakery, dairy, meat, fish, fruit, vegetable, legumes, grains, nuts, greens, vegan, sauces, sweets, drinks, israeli, international, oils, eggs, protein, baby, other',
-          'MACRO_GROUPS: 4 top-level folders — Proteins (🥩), Carbohydrates (🍞), Fats (🥜), Other (⭐)',
-          'getMacroGroup(food): runtime classification — protein≥30% cal → proteins, fat≥45% → fats, carbs≥40% → carbs, else category-based'
-        ]},
-        { h: 'Micronutrient Analysis', list: [
-          'MICRONUTRIENT_RDI: 25 nutrients (13 vitamins + 10 minerals + 2 other)',
-          'Vitamins: A, C, D, E, K, B1, B2, B3, B5, B6, B12, folate, choline',
-          'Minerals: calcium, iron, magnesium, phosphorus, potassium, sodium, zinc, copper, manganese, selenium',
-          'Other: fiber, cholesterol (isLimit: true — upper limit, not target)',
-          '3 tabs in modal: Vitamins, Minerals, Amino Acids',
-          'Suggest foods button: findFoodsRichIn(nutrientKey) returns top 5 foods by value per 100g'
-        ]},
-        { h: 'Amino Acid Subsystem', list: [
-          'AA_PROFILES: 21 food-category profiles (mg per g of protein)',
-          'AA_RDA: 9 essential amino acids (histidine, isoleucine, leucine, lysine, methionine, phenylalanine, threonine, tryptophan, valine)',
-          'getFoodAminoAcids(food): runtime calculator — nutrition.protein × profile × 10',
-          'calcAATargets(weightKg): AA_RDA[aa] × body weight',
-          'sumAminoAcids(items): totals across meal items'
-        ]}
-      ]
+        "id": "recovery",
+        "icon": "📊",
+        "title": "Recovery Map (Complete Algorithm)",
+        "sections": [
+            {
+                "h": "Decay Model Formula",
+                "body": "recoveryPct(daysSince) = Math.round(100 × (1 - Math.exp(-daysSince / 3.0))). TAU = 3.0 days. This means: 0 days = 0% recovery (just trained, fully fatigued), 1 day = 28%, 2 days = 49%, 3 days = 63% (one TAU), 4 days = 74%, 5 days = 81%, 6 days = 86% (two TAUs), 7 days = 90%, 10 days = 96%, 14 days = 99%. Based on Schoenfeld's research on muscle recovery timelines."
+            },
+            {
+                "h": "Synergist Credit (30%)",
+                "body": "SYNERGIST_CREDIT = 0.30. When an exercise trains a primary muscle, each synergist muscle listed in exercise.synergist_muscles receives 30% of the training volume. Example: Bench Press has primary muscle = chest, synergists = [shoulders, triceps]. If user benches 80kg × 10 reps × 3 sets = 2400kg volume: chest gets 2400kg, shoulders get 720kg (30%), triceps get 720kg (30%). Sets count: primary gets +3 sets, each synergist also gets +3 sets (integer count, not scaled)."
+            },
+            {
+                "h": "computeForClient(clientId) — Full Step-by-Step",
+                "body": "1. If no clientId → return null. 2. db.find('workout_history', 'by_clientId', clientId). 3. If empty → return all 11 groups at {recovery:100, status:'untrained'}. 4. Collect all unique exercise_ids from all workouts. 5. Promise.all of lookupExercise(id) for each → builds exCache[id] = {group (canonical), synergists[] (canonical)}. 6. Initialize muscleVolumeByDay[11groups][dayBuckets] = 0 and muscleSetsByDay similarly. 7. For each workout: compute dayBucket = Math.floor(date / 86400000). For each exercise: lookup cached {group, synergists}. For each set (skip if done===false): volume = parseFloat(weight) × (typeof reps==='number' ? reps : parseInt(reps)||0). Add volume to primary muscle's day bucket. Add 30% volume to each synergist's day bucket. Add 1 set to primary and each synergist. 8. For each of 11 groups: find most-recent day bucket with volume>0, compute lastTrainedDaysAgo, apply recoveryPct formula, sum vol7d (daysAgo 0-6), vol30d (0-29), sets7d, sets30d, determine status bucket. 9. Return object keyed by group name."
+            },
+            {
+                "h": "Status Buckets (4 levels)",
+                "list": [
+                    "untrained: lastTrainedDaysAgo is null/NaN (never trained this muscle). Color: gray (rgba(120,120,120,0.25)).",
+                    "fresh: recovery ≥ 85%. Color: green (rgba(34,197,94,0.65)).",
+                    "recovering: 50% ≤ recovery < 85%. Color: yellow (rgba(245,158,11,0.65)).",
+                    "fatigued: recovery < 50%. Color: red (rgba(239,68,68,0.75))."
+                ]
+            },
+            {
+                "h": "Three Display Modes",
+                "list": [
+                    "Recovery (default): muscles colored by recovery % (red→yellow→green→gray). Tooltip shows 'Recovery: 86%' + 'Last trained: 2d ago'.",
+                    "7d Volume: muscles colored by training volume in last 7 days (light blue → bright blue gradient, alpha 0.25-0.85 based on ratio to max). Tooltip shows '7d volume: 2400kg' + '12 sets'.",
+                    "30d Volume: same as 7d but for 30-day window."
+                ]
+            },
+            {
+                "h": "SVG Fill Application",
+                "body": "renderBodySVG(): 1. Inject SVG string into #rec-svg-container. 2. For recovery mode: for each .bm-muscle path, read data-group, look up _data[group], set fill via muscleFillColor(recovery, lastTrainedDaysAgo). 3. For volume modes: compute maxVol across all groups, for each path set fill via muscleVolumeColor(volume, maxVol) — interpolates alpha from 0.25 to 0.85 based on volume/maxVol ratio. 4. Append <title> SVG element to each path with tooltip text."
+            },
+            {
+                "h": "Muscle List Rendering",
+                "body": "renderMuscleList(): 1. Sort ALL_GROUPS: trained muscles first (most recent first), untrained last. 2. Compute maxVal across all groups for bar scaling. 3. For each group: render row with label (localized), last-trained text ('Today'/'Nd ago'/'Not trained'), value label ('86%' or '2400kg · 12 sets'), colored progress bar (success/warning/danger/muted for recovery, primary for volume), left-border color matching status. 4. Each row has CSS class rec-status-<status> for styling."
+            }
+        ]
     },
     {
-      id: 'recovery', icon: '📊', title: 'Recovery Map',
-      sections: [
-        { h: 'Decay Model', body: 'Formula: recoveryPct = round(100 × (1 − exp(−daysSince / TAU))) where TAU = 3.0 days. Recovery timeline: 0 days = 0%, 1 day = 28%, 3 days = 63%, 6 days = 86%, 10 days = 96%.' },
-        { h: 'Synergist Credit', body: 'SYNERGIST_CREDIT = 0.30 (30%). When an exercise trains a primary muscle, each synergist muscle listed in exercise.synergist_muscles receives 30% of the volume. Example: Bench Press (chest primary) gives 30% volume credit to shoulders and triceps.' },
-        { h: 'Status Buckets', list: [
-          'fresh: recovery ≥ 85% (green)',
-          'recovering: 50% ≤ recovery < 85% (yellow)',
-          'fatigued: recovery < 50% (red)',
-          'untrained: never trained (gray)'
-        ]},
-        { h: 'Three Modes', list: [
-          'Recovery: color-coded muscles per recovery %',
-          '7d Volume: total training volume per muscle in last 7 days',
-          '30d Volume: total training volume per muscle in last 30 days'
-        ]},
-        { h: 'Data Flow', body: 'computeForClient(clientId) walks workout_history, accumulates volume per (muscle, day-bucket), applies decay + finds most-recent training day. Returns {recovery, lastTrainedDaysAgo, volume7d, volume30d, sets7d, sets30d, status} for all 11 muscle groups.' }
-      ]
+        "id": "program-builder",
+        "icon": "🏋️",
+        "title": "Program Builder (Complete)",
+        "sections": [
+            {
+                "h": "openProgramCreator(clientId) — Step by Step",
+                "body": "1. Initialize _pb = {clientId, name:'', splitType:'ab', duration:3, activeDay:0, exerciseCache:[], days:[]}. 2. await db.all('exercise_base') → filter !is_archived → assign to _pb.exerciseCache. 3. rebuildDays('ab') — builds default 2-day structure. 4. Show program-builder-modal. 5. Set form values: pb-name='', pb-split='ab', pb-duration='3'. 6. renderBuilder(). 7. Focus pb-name after 100ms."
+            },
+            {
+                "h": "rebuildDays(splitType) — Step by Step",
+                "body": "1. Get splitDays from window.getSplitDays(splitType) — returns array of {letter, name, isRest, groups}. 2. Save oldDays = _pb.days. 3. Reset _pb.days = []. 4. For each splitDay: look up oldDays[i] if exists. Push {day_letter, name, is_rest_day, day_of_week (from defaultDaysOfWeek), exercises: isRest ? [] : (old && !old.is_rest_day ? old.exercises : [])}. 5. If activeDay >= new length → reset to 0."
+            },
+            {
+                "h": "renderBuilder() — Every Element Created",
+                "body": "1. Set #pb-freq-hint text from SPLIT_CONFIGS[splitType].freq. 2. Render #pb-day-tabs: one button per day with letter + exercise count badge. Active day gets bg-primary text-white. 3. Render #pb-day-content: either empty-state or exercise cards. Per exercise card: outer div .pb-draggable with data-pb-ex-index. Header .pb-drag-handle (draggable=true): grip icon (6 dots), index number badge, exercise thumbnail (image from cache), superset ⚡ icon, name+group (clickable→openExerciseModal), ⚡ toggle, +Add Set, Replace, Delete buttons. Set rows: set #, type badge, weight input, × reps input, RPE input (sm+), set-type cycler, delete-set. Footer: 3 rows of buttons (adjustments, export/print, primary actions)."
+            },
+            {
+                "h": "pbAddExercise(exerciseId) — Step by Step",
+                "body": "1. Rebuild _pb._exMap if cache size changed. 2. Look up exercise via Map.get(exerciseId). 3. Get current language. 4. Get active day. 5. Push {exercise_id, name (localized), group (localized), sets: [{weight:null, reps:null, rpe:null}]}. 6. Toast exerciseAddedToDay. 7. renderBuilder()."
+            },
+            {
+                "h": "pbAutoArrange(strategy) — 3 Strategies",
+                "body": "Common: build scored[] with {ex, score:[block, mechanic, name]}, stable sort, count moves, clear superset flags. Strategy 1 (compound_first): single block, mechanic=compound first. Strategy 2 (push_pull_legs): 5 blocks (push=chest/shoulders/triceps, pull=back/biceps/forearms, legs, core=abs, other). Strategy 3 (large_to_small): 3 blocks (large=legs/back/chest, medium=shoulders/arms, small=forearms/abs/other). Each block sorts compound before isolation, then alphabetical."
+            },
+            {
+                "h": "pbMoveExercise(fromIdx, toIdx) — Drag & Drop",
+                "body": "1. Validate indices. 2. splice(fromIdx, 1) removes exercise. 3. splice(toIdx, 0, moved) inserts at new position. 4. Clear stale superset flags. 5. renderBuilder(). Drag-and-drop uses HTML5 native events: dragstart sets dragFromIdx + opacity 0.4, dragover computes top/bottom half + adds visual class, drop computes finalIdx based on cursor position + direction, dragend cleans up."
+            },
+            {
+                "h": "Set Types (5 types, cycled by sun icon)",
+                "list": [
+                    "normal: no badge, no special styling (default)",
+                    "warmup: 🔥 badge, yellow border/bg (bg-warning/15 text-warning border-warning/30)",
+                    "drop: 📉 badge, cyan border/bg (bg-accent/15 text-accent border-accent/30)",
+                    "failure: 💥 badge, red border/bg (bg-danger/15 text-danger border-danger/30)",
+                    "amrap: ∞ badge, blue border/bg (bg-primary/15 text-primary-2 border-primary/30). Reps placeholder becomes ∞."
+                ]
+            },
+            {
+                "h": "pbSave() — Step by Step",
+                "body": "1. Read pb-name, trim. If empty → toast warning. 2. Read pb-split, pb-duration. 3. Count total exercises. If 0 → toast warning. 4. Edit mode: update existing client_programs record. Create mode: insert new with status:'active'. 5. Close modal, toast, loadPrograms(clientId)."
+            },
+            {
+                "h": "Auto-Generate Program (11-step engine)",
+                "body": "autoGenerateProgram(clientId): 1. Load client. 2. Determine goal→scheme (5 goals with reps/sets/rest/RPE). 3. Session time→exercises per day. 4. Equipment filter (4 buckets). 5. Injury filter (19 injuries with keyword blocklists). 6. BMI personalization (obese→low-impact). 7. Age adjustment (older→80% rest). 8. Split structure. 9. Exercises per session. 10. Volume target. 11. Build each day with compound+isolation selection."
+            }
+        ]
     },
     {
-      id: 'security', icon: '🔐', title: 'Security & Backup',
-      sections: [
-        { h: 'Password Hashing', list: [
-          'Algorithm: PBKDF2 via Web Crypto (crypto.subtle.deriveBits)',
-          'Hash: SHA-256, Iterations: 100,000',
-          'Salt: random 16 bytes (crypto.getRandomValues)',
-          'Storage: "pbkdf2$<base64>" (algorithm-prefixed)',
-          'Session: in-memory only (_state.unlocked) — no persistent token',
-          'Backward compat: old SHA-256 passwords auto-upgraded to PBKDF2 on first login'
-        ]},
-        { h: 'Backup Format', body: 'JSON file with meta (format_version, app_version, db_name, db_version, created_at, lang, theme, store_counts, total_records) and data (all stores as arrays). Filename: fitness-crm-backup-YYYY-MM-DD.json. Import validates db_name match and format version.' },
-        { h: 'Removed Security Issues', list: [
-          'localStorage auto-backup (dk_ab) — was plaintext PII leak every 5 min, REMOVED',
-          'XSS in openExerciseModal — imgs[] and technique were unescaped, FIXED with escapeAttr/escapeHTML',
-          'All 23 modals now have role="dialog" aria-modal="true" + focus trap'
-        ]},
-        { h: 'Google Drive Backup', body: 'Scaffold for OAuth-based cloud backup using Google Identity Services + Drive API v3. Requires user to paste their own OAuth Client ID. Currently opt-in in Settings.' }
-      ]
+        "id": "security",
+        "icon": "🔐",
+        "title": "Security & Backup",
+        "sections": [
+            {
+                "h": "Password Hashing (PBKDF2)",
+                "body": "Algorithm: PBKDF2 via Web Crypto crypto.subtle.deriveBits. Hash: SHA-256. Iterations: 100,000. Salt: random 16 bytes via crypto.getRandomValues, base64-encoded. Derived key length: 256 bits. Storage format: 'pbkdf2$<base64>' (algorithm-prefixed for future migration). Settings keys: auth_password_hash, auth_password_salt. Password policy: minimum 4 characters. Session: in-memory only (_state.unlocked), no persistent token, re-login required on every app open."
+            },
+            {
+                "h": "Backward Compatibility Migration",
+                "body": "Old passwords were stored as single-pass SHA-256 (with or without 'sha256$' prefix). verifyPassword() tries 3 paths: (1) PBKDF2 candidate hash, (2) legacy unprefixed SHA-256 (re-hash with legacy algo, compare raw base64), (3) explicit 'sha256$' prefix. On legacy match: password is transparently re-hashed with PBKDF2 and saved. Console logs '[auth] password upgraded from SHA-256 to PBKDF2'."
+            },
+            {
+                "h": "Backup Format (JSON)",
+                "body": "Structure: {meta: {format_version:1, app_version, db_name, db_version, created_at, created_at_iso, lang, theme, store_counts:{}, total_records}, data: {store_name: [records]}}. Filename: fitness-crm-backup-YYYY-MM-DD.json. Import validates: db_name must match 'fitness_crm_db', format_version must be 1 (rejects future versions). On import: confirm() → wipe all stores → restore records store-by-store → page reload after 1.2s."
+            },
+            {
+                "h": "Removed Security Issues",
+                "list": [
+                    "localStorage auto-backup (dk_ab) — was plaintext PII leak every 5 minutes, REMOVED. Cleared on boot via localStorage.removeItem('dk_ab').",
+                    "XSS in openExerciseModal — imgs[] and technique were concatenated into innerHTML without escaping, FIXED with escapeAttr/escapeHTML.",
+                    "All 23 modals now have role='dialog' aria-modal='true' + focus trap via MutationObserver."
+                ]
+            },
+            {
+                "h": "Google Drive Backup (Scaffold)",
+                "body": "OAuth-based cloud backup using Google Identity Services + Drive API v3. Requires user to paste their own OAuth Client ID in Settings. Functions: gdriveBackup (serialize→upload as dk-gym-backup.json), gdriveRestore (download→wipe→restore). Uses multipart/related upload to Drive API. Currently opt-in — not configured by default."
+            }
+        ]
     },
     {
-      id: 'print', icon: '🖨️', title: 'Print System',
-      sections: [
-        { h: 'Four Print Functions', list: [
-          'printProgram(programId) — A4 HTML with day/exercise/set tables (3-language labels)',
-          'printNutritionPlan(planId) — A4 HTML with meals × foods table and macro totals',
-          'printOnForm(programId) — A4 overlay on pre-printed JPEG form template (mm-precise positioning)',
-          'printPrivateGym(programId) — opens new window with full calibration UI (rotation, scale, opacity, per-block drag)'
-        ]},
-        { h: 'FORM_DEFAULTS', body: 'Print calibration defaults: offsetX/Y (global mm), clientName/date/sessionNum/weekNum/goals/notes (x, y, w, fontSize each), exerciseTable (rowHeight: 4.3mm, columns: weight1/2/3, reps, sets, name, muscle, num, set, setNum, weight, wtReps, notes), muscleSections (9 sections with startY + maxRows), aerobic (startY, rowHeight, columns), _version: 2.' },
-        { h: 'PG_LAYOUT', body: 'Private Gym branded form layout: fields (lastName, firstName, age, weight, etc.), cols (name, sets, reps, weight), sections (chest, back, front_arm, rear_arm, erectors, abs, shoulders, legs), aero (3 rows with y/h), genderMark. Hebrew-first form with RTL layout.' }
-      ]
+        "id": "print",
+        "icon": "🖨️",
+        "title": "Print System (4 Functions)",
+        "sections": [
+            {
+                "h": "printProgram(programId, compact)",
+                "body": "Builds A4 HTML in hidden iframe. Steps: 1. Load program + client. 2. Build langLabels for 3 languages. 3. For each workout day: build exercise rows with set tables (header + set rows with weight/reps/rpe). 4. Create hidden iframe, write full HTML with inline <style> (brand row, info badges, day headers with primary background, zebra rows). 5. Call iframe.contentWindow.print(). 6. Remove iframe after 1s."
+            },
+            {
+                "h": "printNutritionPlan(planId)",
+                "body": "Same iframe approach. Builds meals × foods table with macro totals per meal and grand total. Includes plan name, client name, date."
+            },
+            {
+                "h": "printOnForm(programId) / printPrivateGym(programId)",
+                "body": "Opens new window with full calibration UI. Steps: 1. Load program + client + exercise cache (filtered non-archived). 2. Build exById Map. 3. Initialize 10 buckets (chest/back/front_arm/rear_arm/erectors/abs/shoulders/legs/aero_warm/aero_cardio). 4. Iterate workout_days, skip rest days, for each exercise: determine section via pgTargetRow, push to bucket. 5. Read calibration from localStorage.pgPrintCal. 6. pgGetLayout() clones PG_LAYOUT, merges localStorage.pgLayoutOv overrides. 7. cell(x,y,w,txt,opts) builds absolutely-positioned <div> in mm units. 8. Build infoBody (9 header fields), mainBody (section rows with name+sets+reps+weight cells), aeroBody (3 rows). 9. Open new window, write full HTML with <style> for A4, calibration toolbar (rotation/scale/opacity/grid/blur/block toggles/print button), tune panel (per-field inputs), and inline <script> for live updates."
+            },
+            {
+                "h": "FORM_DEFAULTS (print calibration)",
+                "body": "A4 positioning in millimeters. offsetX/Y: global offset. Header fields: clientName, date, sessionNum, weekNum, goals, notes (each with x, y, w, fontSize). exerciseTable: rowHeight=4.3mm, 14 columns (weight1/2/3, reps, sets, name, muscle, num, set, setNum, weight, wtReps, notes — each with x, w, fontSize). muscleSections: 9 sections (legs/back/chest/shoulders/elbow_flexors/triceps/forearms/abdominals/other) with startY and maxRows. aerobic: startY=237, rowHeight=4.3, 5 columns. _version=2 (bump forces reset)."
+            },
+            {
+                "h": "PG_LAYOUT (Private Gym branded form)",
+                "body": "Hebrew-first A4 form layout in mm. fields: 9 header fields (lastName, firstName, age, weight, fromDate, toDate, goal, perWeek, trainer — each with x, y, w). genderMark: zx/nx/y (ז/נ marks). cols: name/sets/reps/weight (each with x, w). sections: 8 sections (chest/back/front_arm/rear_arm/erectors/abs/shoulders/legs — each with top, rows, rowH=4.3, label in Hebrew). aero: 3 rows with y/h, nameX/nameW/timeX/timeW."
+            }
+        ]
     },
     {
-      id: 'i18n', icon: '🌐', title: 'Internationalization',
-      sections: [
-        { h: 'Languages', list: [
-          '3 languages: English (en), Russian (ru), Hebrew (he)',
-          'RTL: Hebrew only (dir="rtl" on <html>)',
-          '~1,072 i18n keys per language across 21 top-level groups',
-          't(key, vars) resolves dotted paths, falls back to EN, then empty string',
-          'Variable interpolation: {varName} replaced via regex'
-        ]},
-        { h: 'DOM Translation', body: 'applyI18n(lang) walks DOM: [data-i18n] → textContent, [data-i18n-ph] → placeholder, [data-i18n-html] → innerHTML, [data-i18n-attr="title:key,aria-label:key"] → arbitrary attributes. 25 modal buttons have i18n-aware aria-labels.' },
-        { h: 'RTL Support', body: 'Logical CSS properties used throughout (margin-inline-start, border-inline-end, text-start, text-end). .flip-rtl class applies scaleX(-1) for directional icons. Canvas print does not mirror for Hebrew (known limitation).' }
-      ]
+        "id": "i18n",
+        "icon": "🌐",
+        "title": "Internationalization (Complete)",
+        "sections": [
+            {
+                "h": "3 Languages with RTL Support",
+                "list": [
+                    "English (en) — default, LTR",
+                    "Russian (ru) — LTR",
+                    "Hebrew (he) — RTL (dir='rtl' on <html>)"
+                ]
+            },
+            {
+                "h": "~3,462 keys per language × 3 = ~10,386 translation entries",
+                "body": "21 top-level key groups: analytics (87 keys), app (6), aria (54), aside (9), auth (30), backup (51), bm (9), boot (87), client (393), clients (51), common (111), exercise (180), food (165), generator (378), nav (18), nutrition (654), programs (303), recovery (39), settings (294), toast (9), workouts (293)."
+            },
+            {
+                "h": "t(key, vars) Resolution Flow",
+                "body": "1. Look up I18N[_lang] tree by splitting key on '.'. 2. If null/undefined, retry with I18N.en. 3. If still null, return '' (empty string — falsy, so t('x') || 'fallback' patterns activate). 4. If vars provided, run regex /\\{(\\w+)\\}/g replacing {name} with vars.name (or leaves {name} if missing). 5. Return resolved string."
+            },
+            {
+                "h": "applyI18n(lang) DOM Walk",
+                "body": "1. Set <html lang dir>. 2. [data-i18n] → set textContent (with optional data-i18n-vars for {n} interpolation). 3. [data-i18n-ph] → set placeholder. 4. [data-i18n-html] → set innerHTML. 5. [data-i18n-attr] → parse comma-separated attr:key pairs, set each attribute. 6. Special: #pb-duration options use pluralization (monthsOne for 1, monthsFew for 2-5 with {n}). 7. Sync #lang-select. 8. Re-render injury checklist labels. 9. Re-render store roster with translated names."
+            },
+            {
+                "h": "RTL Support",
+                "body": "Logical CSS properties used throughout: margin-inline-start, border-inline-end, text-start, text-end, padding-inline-end. .flip-rtl class applies transform: scaleX(-1) for directional icons (chevrons). Canvas print does NOT mirror for Hebrew (known limitation). SVG body map is direction-agnostic."
+            }
+        ]
     },
     {
-      id: 'pwa', icon: '📱', title: 'PWA Configuration',
-      sections: [
-        { h: 'manifest.json', list: [
-          'name: David King Gym, short_name: DK Gym',
-          'display: standalone, orientation: any',
-          'background_color: #0f172a, theme_color: #10b981',
-          'lang: ru, dir: ltr',
-          'categories: [health, fitness, productivity]',
-          'start_url: ./fitness-crm.html, scope: ./'
-        ]},
-        { h: 'Service Worker (sw.js)', list: [
-          'CACHE_NAME: dk-gym-v5',
-          'APP_SHELL: [/, /fitness-crm.html, /exercise-db.json, /food-db.json, /manifest.json]',
-          'Strategy: cache-first for same-origin, network-first for cross-origin',
-          'On fetch failure: returns Response("Offline", 503) instead of undefined',
-          'Lifecycle: install → cache.addAll → skipWaiting; activate → delete old caches → clients.claim'
-        ]},
-        { h: 'Theme System', body: '28 themes (10 dark + 6 mid + 3 premium-animated + 10 light). Each theme sets data-theme + data-mode attributes. Tailwind dark: variant keys off data-mode="dark". <meta name="theme-color"> updated dynamically to match active theme.' }
-      ]
+        "id": "pwa",
+        "icon": "📱",
+        "title": "PWA Configuration",
+        "sections": [
+            {
+                "h": "manifest.json",
+                "list": [
+                    "name: David King Gym, short_name: DK Gym",
+                    "display: standalone, orientation: any",
+                    "background_color: #0f172a, theme_color: #10b981",
+                    "lang: ru, dir: ltr",
+                    "categories: [health, fitness, productivity]",
+                    "start_url: ./fitness-crm.html, scope: ./"
+                ]
+            },
+            {
+                "h": "Service Worker (sw.js v5)",
+                "body": "CACHE_NAME: dk-gym-v5. APP_SHELL: [/, /fitness-crm.html, /exercise-db.json, /food-db.json, /manifest.json]. Strategy: cache-first for same-origin (if cached→return cached, else fetch+cache, on failure→return cached or 503 Response). Network-first for cross-origin (try fetch, on failure→fall back to cache, else 503). Lifecycle: install→cache.addAll→skipWaiting, activate→delete old caches→clients.claim."
+            },
+            {
+                "h": "Theme System (26 themes)",
+                "body": "10 dark + 10 light + 6 mid-tone themes. Each theme sets data-theme + data-mode attributes on <html>. data-mode (dark/light) drives Tailwind's dark: variant. <meta name='theme-color'> updated dynamically from THEMES_META.bgHex. Themes: dark, ocean-deep, forest-night, sunset-rose, carbon-steel, royal-purple, crimson-dark, amber-gold, teal-pro, slate-mono, light, cloud-blue, mint-fresh, peach-soft, lavender-light, rose-quartz, sand-stone, sky-day, sage-garden, coral-reef, midnight-mint, dusk-velvet, graphite-mist, tide-pool, warm-espresso, aurora-haze."
+            }
+        ]
     },
     {
-      id: 'features', icon: '✨', title: 'Unique Features',
-      sections: [
-        { h: 'Auto-Arrange (No competitor offers this)', body: '3 strategies to reorder exercises in a workout day: Compound → Isolation (multi-joint first), Push → Pull → Legs (chest/shoulders/triceps → back/biceps → legs/core), Large → Small muscle (legs/back/chest → shoulders/arms → forearms/calves/core). Uses force and mechanic classification fields.' },
-        { h: 'Classification Filters (First in category)', body: '4 filter dimensions in body map picker: Mechanic (Compound/Isolation), Force (Push/Pull/Static), Level (Beginner/Intermediate/Expert), Category (Strength/Plyometrics/Stretching/etc.). Each chip shows count of matching exercises. Force filter is unique — no competitor exposes push/pull/static.' },
-        { h: 'Recovery Heat-Map with Synergists', body: 'Fitbod-style per-muscle recovery % with 6-day exponential decay. Synergist muscles receive 30% fatigue credit. 3 modes (recovery/7d volume/30d volume) × 3 SVG views (front/back/side). Side view is unique — competitors only have front+back.' },
-        { h: 'Archive System', body: 'Soft-delete for exercises and foods: is_archived flag instead of hard delete. Archive toggle button in toolbar. Restore button per item. Auto-disables when switching screens.' },
-        { h: 'Set Types', body: '5 set types: Normal (default), Warmup (🔥 yellow), Drop (📉 cyan), Failure (💥 red), AMRAP (∞ blue). Cycled by clicking sun icon next to each set.' },
-        { h: 'Grouped Exercise Grid', body: 'Exercises in body map picker grouped by Compound/Isolation sections with sticky headers. Toggle between grouped and flat view. Auto-disables when mechanic filter is active.' },
-        { h: 'Exercise Thumbnails', body: 'Exercise photos shown in: program builder cards, program day preview, live workout exercise headers, and program list day rows (4 thumbnails per day + "+N" overflow).' }
-      ]
+        "id": "features",
+        "icon": "✨",
+        "title": "Unique Features (No Competitor Has These)",
+        "sections": [
+            {
+                "h": "Auto-Arrange Day (3 strategies)",
+                "body": "Reorders exercises in a workout day using classification fields. Strategy 1: Compound→Isolation (multi-joint first, then single-joint, alphabetical within each). Strategy 2: Push→Pull→Legs (chest/shoulders/triceps→back/biceps/forearms→legs→core→other). Strategy 3: Large→Small muscle (legs/back/chest→shoulders/arms→forearms/calves/core). NO competitor app (Hevy, Strong, Fitbod, Jefit, Boostcamp) offers automatic exercise reordering."
+            },
+            {
+                "h": "Classification Filters (Force: Push/Pull/Static)",
+                "body": "4 filter dimensions in body map picker: Mechanic, Force, Level, Category. Each chip shows count of matching exercises. Force filter (push/pull/static) is UNIQUE — no competitor exposes this dimension. Users can combine multiple filters (AND logic)."
+            },
+            {
+                "h": "Recovery Heat-Map with Synergist Credit",
+                "body": "Fitbod-style per-muscle recovery % with 6-day exponential decay. Synergist muscles receive 30% fatigue credit (e.g. bench press fatigues triceps and shoulders). 3 modes × 3 SVG views (front/back/side). Side view is unique — competitors only have front+back."
+            },
+            {
+                "h": "Archive System (Soft Delete + Restore)",
+                "body": "Exercises and foods are flagged is_archived=true instead of hard-deleted. Archive toggle button in toolbar (yellow when active). Restore button per item. Auto-disables when switching screens via router.show()."
+            },
+            {
+                "h": "Set Types (5 types with color coding)",
+                "body": "Normal, Warmup (🔥), Drop (📉), Failure (💥), AMRAP (∞). Cycled by clicking sun icon next to each set. Color-coded badges and row borders. Matches Hevy/Strong/Boostcamp standard."
+            },
+            {
+                "h": "Grouped Exercise Grid",
+                "body": "Exercises in body map picker grouped into Compound/Isolation/Other sections with sticky headers. Toggle between grouped and flat view. Auto-disables when mechanic filter is active (single mechanic = no need for grouping)."
+            },
+            {
+                "h": "Exercise Thumbnails Everywhere",
+                "body": "Exercise photos shown in: program builder cards (32×32px), program day preview (40×40px), live workout exercise headers (40×40px), program list day rows (4 thumbnails + overflow count). Uses O(1) Map-cached lookups via buildExerciseIndex()."
+            },
+            {
+                "h": "Client Photos",
+                "body": "Click photo placeholder in client form to upload. Image compressed to 256px via vault.compressImage at 0.80 quality. Stored as base64 dataURL in client.photo_url. Survives backup/restore. Shows in dashboard cards and profile hero card instead of gradient avatar with initials."
+            }
+        ]
+    },
+    {
+        "id": "live-workout",
+        "icon": "💪",
+        "title": "Live Workout Session",
+        "sections": [
+            {
+                "h": "Start Flow (3 entry points)",
+                "body": "start() — empty workout. startFromTemplate(tpl) — prefill from template. startFromProgram(prefill) — prefill from program day (includes client_id, exercise sets with type field). All 3 now await loadExerciseCache() before render() to ensure thumbnails appear on first render."
+            },
+            {
+                "h": "Exercise Block HTML",
+                "body": "Per exercise: thumbnail (40×40px from cache via Map lookup), name (clickable→openExerciseModal), group label, per-exercise rest timer input (default 90s), view eye-icon, remove button. Set table: columns = #, Prev (previous workout's weight×reps), Weight (kg input), Reps (number or text input), RPE (1-10 input, sm+ only), Done (checkbox), Type (sun icon cycler), Remove set."
+            },
+            {
+                "h": "Set Done → Rest Timer + Auto-Scroll",
+                "body": "When user checks 'Done' on a set: 1. Mark set.done=true. 2. Start rest timer with exercise's rest_sec (default 90s). 3. Web Audio 880Hz beep + vibrate on timer complete. 4. Auto-scroll to next exercise (if superset) or next set. 5. Auto-fill 'Prev' column for next session."
+            },
+            {
+                "h": "Auto-Save (30s interval)",
+                "body": "Every 30 seconds, saveDraft() writes _workout to settings.workout_draft. Also saves on visibilitychange (tab hidden). On boot after auth, checkDraft() offers restore via confirm() dialog."
+            },
+            {
+                "h": "Finish → History",
+                "body": "finish(): 1. Confirm dialog. 2. Compute duration = (Date.now() - started_at) / 1000. 3. Compute total_volume = sum of all weight×reps. 4. Build workout_history record (client_id, name, date, duration, total_volume, exercises with sets). 5. db.put('workout_history', record). 6. Update client.last_active. 7. Clear draft. 8. Navigate back."
+            }
+        ]
+    },
+    {
+        "id": "archive",
+        "icon": "📦",
+        "title": "Archive System",
+        "sections": [
+            {
+                "h": "Soft Delete Mechanism",
+                "body": "Exercises and foods are NOT hard-deleted. Instead, is_archived=true and archived_at=Date.now() are set. The original folder_path/category is preserved for archive display. All exercise cache loaders (program builder ×2, print routine, live workout) filter e => !e.is_archived. Food loaders (foodDatabase.load, nutritionPlans.loadFoods) filter f => !f.is_archived."
+            },
+            {
+                "h": "Archive Toggle Button",
+                "body": "In Exercises screen toolbar and Food Database toolbar. When active: button gets bg-warning text-white (yellow). In archive mode: only archived items shown, each with '↩ Restore' button (green text). Edit/move/delete controls hidden in archive mode. Router auto-disables archive mode when switching screens."
+            },
+            {
+                "h": "Restore Function",
+                "body": "restoreExercise(id): db.get('exercise_base', id) → set is_archived=false, delete archived_at → db.put → toast 'Restored from archive' → load(). restoreFood(id): same for food_database."
+            }
+        ]
+    },
+    {
+        "id": "analytics",
+        "icon": "📈",
+        "title": "Analytics Screen",
+        "sections": [
+            {
+                "h": "4 KPI Cards",
+                "list": [
+                    "Active Days — count of distinct workout dates in selected range",
+                    "Total Workouts — count of workout_history records in range",
+                    "Current Streak — consecutive days with at least 1 workout (counting back from today or yesterday)",
+                    "Adherence — average match between logged macros and target macros (nutrition_history)"
+                ]
+            },
+            {
+                "h": "Activity Heatmap Calendar",
+                "body": "GitHub-style calendar grid. Each day cell colored by workout intensity: 0 workouts = empty (surface-2), 1 workout = light primary, 2+ workouts = full primary. Range: day (last 7 days), week (last 7 weeks), month (last 30 days)."
+            },
+            {
+                "h": "Volume Chart",
+                "body": "Per-muscle-group volume bars. Iterates workout_history in range, sums weight×reps per muscle group (using exercise_base group_canonical lookup). Renders horizontal bars sorted by volume descending."
+            }
+        ]
+    },
+    {
+        "id": "encyclopedia",
+        "icon": "📚",
+        "title": "Encyclopedia & Technical Documentation",
+        "sections": [
+            {
+                "h": "User Encyclopedia (8 chapters)",
+                "body": "In-app guide for trainers and nutritionists. Chapters: Overview, Clients, Workout Programs, Nutrition Plans, Recovery Map, Archive System, Body Map, Backup & Security. Each chapter has sections with headings, body text, and bullet lists. 3-language content (EN/RU/HE). Tabbed navigation between chapters."
+            },
+            {
+                "h": "Technical Encyclopedia (this document, 18 chapters)",
+                "body": "Complete system architecture documentation for developers and AI agents. Chapters: Architecture, Database, Modules, Body Map, Nutrition, Recovery, Program Builder, Security, Print, i18n, PWA, Unique Features, Live Workout, Archive, Analytics, Encyclopedia, Client Management, Settings. No source code — only structural descriptions. Exportable as .txt file via WhatsApp button."
+            },
+            {
+                "h": "WhatsApp Export",
+                "body": "Downloads full technical documentation as 'David-King-Gym-CRM-Technical-Encyclopedia.txt' file. Also opens WhatsApp with short summary message listing all chapter titles. The .txt file uses formatted plain text with section dividers (═════), numbered chapters, bullet points (•), and sub-headings (▸)."
+            }
+        ]
+    },
+    {
+        "id": "client-management",
+        "icon": "👥",
+        "title": "Client Management (Complete)",
+        "sections": [
+            {
+                "h": "Client Form (33+ fields)",
+                "body": "Full profile form with: photo upload (256px compressed), full_name (required), age, weight, height, phone, email, goal (5 options), split (8 options), frequency (1-7 slider), fitness_level (3 options), training_experience (months), equipment (checkboxes), training_days (day-of-week checkboxes), allergies (checkboxes), injuries (20-item checklist with text), notes. Body composition: body_fat_pct, visceral_fat, muscle_mass, bone_mass, water_pct, metabolic_age. Measurements: neck/shoulder/chest/waist/hip/arm/thigh/calf cm."
+            },
+            {
+                "h": "Dashboard Cards",
+                "body": "Each client shown as card with: photo (or gradient avatar with initials), name + goal badge (color-coded), age/weight/height stats, last active relative time. Click → profile screen. Search across name+goal+notes+injuries. Sort by: created, name, lastActive, goal. Filter by goal."
+            },
+            {
+                "h": "Profile Screen (8 cards)",
+                "body": "heroCard (avatar+name+goal+stats+BMI), personalInfoCard (phone/email), trainingCard (equipment+frequency+split), programsCard (action buttons + active/history program lists), nutritionPlanCard (create button + plan list), healthCard (injuries+notes), photosCard (before/after/progress/other grouped), documentsCard (PDF/text attachments)."
+            },
+            {
+                "h": "File Vault",
+                "body": "Photos: compressed to 1280px max at 0.78 JPEG quality via canvas. Stored as base64 in client.files[] array. Types: before, after, progress, other. Documents: base64, max 5MB. Both survive backup/restore intact."
+            }
+        ]
+    },
+    {
+        "id": "settings",
+        "icon": "⚙️",
+        "title": "Settings Screen (Complete)",
+        "sections": [
+            {
+                "h": "Appearance Section",
+                "list": [
+                    "Language select (EN/RU/HE)",
+                    "Theme grid (26 themes with live preview)",
+                    "Font size (16 levels: A5− to A10+, sets --font-scale CSS variable)",
+                    "UI size sliders (6: exercise-img, food-img, exercise-panel, exercise-card, modal-width, bodymap)",
+                    "Reset button"
+                ]
+            },
+            {
+                "h": "Texture Effects",
+                "body": "Opacity slider (0-1) and kind selector (none/dots/lines/grid). Applies CSS background pattern to body with adjustable opacity."
+            },
+            {
+                "h": "AI Configuration",
+                "body": "OpenAI-compatible API endpoint URL, model name, API key. Save/Test/Clear buttons. Test sends a simple 'Hello' prompt. Stored in settings.ai_config."
+            },
+            {
+                "h": "Branding",
+                "body": "Logo upload (PNG/JPEG, compressed to 1280px). Stored as base64 APP_LOGO_DATA_URI. Applied to: login screen, print headers, share images. Reset button restores default."
+            },
+            {
+                "h": "Print Calibration",
+                "body": "17 input fields for FORM_DEFAULTS: global offset X/Y, exercise table start Y/row height, 7 column X positions, aerobic start Y/row height, header client X/Y, date Y. Save/Reset buttons. Version-gated (bump _version forces reset)."
+            },
+            {
+                "h": "Encyclopedia Buttons",
+                "body": "Two buttons: Encyclopedia (8-chapter user guide, 3-language) and Technical Encyclopedia (18-chapter architecture documentation). Tech Encyclopedia has WhatsApp export button (downloads .txt file + opens WhatsApp with summary)."
+            },
+            {
+                "h": "System Info & Maintenance",
+                "list": [
+                    "Store roster — grid showing all 11 IndexedDB stores with record counts",
+                    "Reseed button — forces re-seed of exercise_base and food_database",
+                    "Wipe DB — deletes entire database (confirm required)",
+                    "Export backup — downloads JSON file",
+                    "Import backup — uploads JSON file, validates, wipes, restores",
+                    "Google Drive save/load — requires OAuth Client ID"
+                ]
+            }
+        ]
     }
-  ];
+];
 
   function _renderTechEncyclopedia() {
     const lang = (typeof currentLang === 'function') ? currentLang() : 'en';
